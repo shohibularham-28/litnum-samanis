@@ -959,20 +959,11 @@
       <div class="save-bar">
         <span class="info">7 dari 9 siswa sudah ditandai</span>
         <div class="save-bar-actions">
-          <div class="ttd-picker">
-            Kepala Sekolah:
-            <select id="ttd-kepsek-siswa"></select>
-          </div>
-          <div class="ttd-picker">
-            Guru Literasi:
-            <select id="ttd-guru-siswa"></select>
-          </div>
+          <button class="pill-btn danger-outline" id="reset-siswa">🔄 Reset Ceklis</button>
           <button class="pill-btn" id="print-siswa">📄 Unduh PDF (A4)</button>
           <button class="pill-btn solid">Simpan Ceklis</button>
         </div>
       </div>
-
-      <div class="signature-block" id="sig-siswa"></div>
     </div>
   </div>
 
@@ -1504,7 +1495,7 @@
   // ------------------------------------------------------------------
   // Tanda tangan / dropdown guru (siapa yang bertugas menandatangani)
   // ------------------------------------------------------------------
-  const TTD_SUFFIXES = ['siswa', 'harian', 'bulanan'];
+  const TTD_SUFFIXES = ['harian', 'bulanan'];
   const TTD_PERAN = ['kepsek', 'guru'];   // dropdown Kepala Sekolah & Guru Literasi, keduanya diisi dari daftar guru
   const tanggalOtomatis = fmtTanggalIndo(todayIso());
   const NIP_KOSONG = "..............................";
@@ -1531,7 +1522,6 @@
         <div class="sig-nip" id="sig-nip-guru-${suffix}">${formatNip('')}</div>
       </div>`;
   }
-  document.getElementById('sig-siswa').innerHTML = buildSignatureBlock('siswa');
   document.getElementById('sig-harian').innerHTML = buildSignatureBlock('harian');
   document.getElementById('sig-bulanan').innerHTML = buildSignatureBlock('bulanan');
 
@@ -2405,6 +2395,34 @@
   const labelMap = {hadir:"Mengerjakan", tidak:"Tidak Mengerjakan", izin:"Izin", sakit:"Sakit", alpha:"Alpha", dispen:"Dispen"};
   let rosterKelasSiswa = [];
 
+  // ------------------------------------------------------------------
+  // Draft ceklis siswa di localStorage — supaya status yang sudah
+  // ditandai petugas tidak hilang kalau halaman ter-reload sebelum
+  // sempat menekan "Simpan Ceklis".
+  // ------------------------------------------------------------------
+  function ceklisDraftKey(){
+    if(!siswaActiveKegiatan || !currentUser.kelas || !siswaSelectedTanggal) return null;
+    return `litnum-ceklis-draft:${siswaActiveKegiatan.id}:${currentUser.kelas}:${siswaSelectedTanggal}`;
+  }
+  function loadCeklisDraft(){
+    const key = ceklisDraftKey();
+    if(!key) return {};
+    try{
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+  function saveCeklisDraft(draft){
+    const key = ceklisDraftKey();
+    if(!key) return;
+    try{ localStorage.setItem(key, JSON.stringify(draft)); }catch(e){ /* storage penuh/nonaktif — abaikan */ }
+  }
+  function clearCeklisDraft(){
+    const key = ceklisDraftKey();
+    if(!key) return;
+    try{ localStorage.removeItem(key); }catch(e){}
+  }
+
   async function renderRosterSiswa(){
     rosterEl.innerHTML = "";
     if(!currentUser.kelas){
@@ -2420,6 +2438,7 @@
     const rows = siswaActiveKegiatan ? await loadCeklis(siswaActiveKegiatan.id, currentUser.kelas) : [];
     const statusBySiswa = {};
     rows.filter(r=>r.tanggal === siswaSelectedTanggal).forEach(r=>{ statusBySiswa[r.siswa_id] = r.status; });
+    const ceklisDraft = loadCeklisDraft();
 
     rosterKelasSiswa.forEach((s,i)=>{
       const row = document.createElement('div');
@@ -2451,8 +2470,12 @@
         sel.value = selVal || "";
         row.dataset.currentStatus = state || selVal || "";
         printStatusEl.textContent = labelMap[state || selVal] || '—';
+        ceklisDraft[s.id] = row.dataset.currentStatus;
+        saveCeklisDraft(ceklisDraft);
       }
-      const st = statusBySiswa[s.id];
+      // Draft lokal (belum tentu tersimpan) didahulukan dari data server,
+      // supaya tanda yang baru saja diklik petugas tetap terlihat setelah reload.
+      const st = Object.prototype.hasOwnProperty.call(ceklisDraft, s.id) ? ceklisDraft[s.id] : statusBySiswa[s.id];
       if(['sakit','ijin','alpha','dispen'].includes(st)) setState(null, st);
       else if(st) setState(st, null);
       hadirBtn.addEventListener('click',()=>setState('hadir',null));
@@ -2506,7 +2529,32 @@
       alert('Gagal menyimpan ceklis: ' + error.message);
       return;
     }
+    clearCeklisDraft();
     alert('Ceklis tersimpan.');
+  });
+
+  document.getElementById('reset-siswa').addEventListener('click', ()=>{
+    if(!siswaActiveKegiatan){ alert('Pilih kegiatan literasi dulu.'); return; }
+    const rowsAda = document.querySelectorAll('#roster-list .roster-row').length > 0;
+    if(!rowsAda){ alert('Belum ada data siswa untuk direset.'); return; }
+    const konfirmasi = confirm(
+      'Yakin ingin mereset ceklis untuk tanggal ini?\n\n' +
+      'Semua status yang sudah ditandai (termasuk yang belum ditekan "Simpan Ceklis") akan dihapus dan harus ditandai ulang. Tindakan ini tidak bisa dibatalkan.'
+    );
+    if(!konfirmasi) return;
+    [...document.querySelectorAll('#roster-list .roster-row')].forEach(row=>{
+      const hadirBtn = row.querySelector('[data-status="hadir"]');
+      const tidakBtn = row.querySelector('[data-status="tidak"]');
+      const sel = row.querySelector('select');
+      hadirBtn.classList.remove('active');
+      tidakBtn.classList.remove('active');
+      sel.className = 'status-select';
+      sel.value = '';
+      row.dataset.currentStatus = '';
+      row.querySelector('.print-status').textContent = '—';
+    });
+    clearCeklisDraft();
+    updateSaveBarInfo();
   });
 
   // Tanggal ceklis siswa/petugas TIDAK bisa dipilih bebas — selalu mengikuti
@@ -3359,7 +3407,7 @@
   const PDF_INK_FAINT = [167, 158, 140]; // --ink-faint
   const PDF_ROW_SHADE = [246, 243, 236]; // --paper
 
-  function buildA4Pdf({ suffix, docTitle, metaLines, columns, columnStyles, rows, filename }){
+  function buildA4Pdf({ suffix, docTitle, metaLines, columns, columnStyles, rows, filename, signature = true }){
     if(!rows || rows.length === 0){ alert('Tidak ada data untuk diekspor.'); return; }
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -3431,48 +3479,51 @@
     });
 
     // ---- Blok tanda tangan — menyambung setelah baris terakhir tabel;
-    // pindah ke halaman baru sendiri kalau ruang yang tersisa tidak cukup. ----
-    const signatureBlockHeight = 34;
+    // pindah ke halaman baru sendiri kalau ruang yang tersisa tidak cukup.
+    // Dilewati untuk ceklis siswa (petugas) karena tidak memerlukan tanda tangan. ----
     let finalY = doc.lastAutoTable.finalY;
-    if(finalY + signatureBlockHeight + 10 > pageHeight - marginBottom){
-      doc.addPage();
-      drawHeaderBand();
-      finalY = 30;
+    if(signature){
+      const signatureBlockHeight = 34;
+      if(finalY + signatureBlockHeight + 10 > pageHeight - marginBottom){
+        doc.addPage();
+        drawHeaderBand();
+        finalY = 30;
+      }
+      const sigY = finalY + 14;
+      const colWidth = (pageWidth - marginX * 2) / 2;
+      const leftX = marginX;
+      const rightX = marginX + colWidth;
+
+      const kepsekName = document.getElementById('sig-name-kepsek-' + suffix)?.textContent.trim() || NAMA_KOSONG;
+      const kepsekNip = document.getElementById('sig-nip-kepsek-' + suffix)?.textContent.trim() || formatNip('');
+      const guruName = document.getElementById('sig-name-guru-' + suffix)?.textContent.trim() || NAMA_KOSONG;
+      const guruNip = document.getElementById('sig-nip-guru-' + suffix)?.textContent.trim() || formatNip('');
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...PDF_INK_SOFT);
+      doc.text('Mengetahui,', leftX, sigY);
+      doc.text('Kepala Sekolah,', leftX, sigY + 5);
+      doc.text(`Sumpiuh, ${tanggalOtomatis}`, rightX, sigY);
+      doc.text('Guru Literasi,', rightX, sigY + 5);
+
+      const nameY = sigY + 22;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(...PDF_INK);
+      doc.text(kepsekName, leftX, nameY);
+      doc.text(guruName, rightX, nameY);
+      doc.setDrawColor(...PDF_INK);
+      doc.setLineWidth(0.2);
+      doc.line(leftX, nameY + 1, leftX + doc.getTextWidth(kepsekName), nameY + 1);
+      doc.line(rightX, nameY + 1, rightX + doc.getTextWidth(guruName), nameY + 1);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...PDF_INK_SOFT);
+      doc.text(kepsekNip, leftX, nameY + 5);
+      doc.text(guruNip, rightX, nameY + 5);
     }
-    const sigY = finalY + 14;
-    const colWidth = (pageWidth - marginX * 2) / 2;
-    const leftX = marginX;
-    const rightX = marginX + colWidth;
-
-    const kepsekName = document.getElementById('sig-name-kepsek-' + suffix)?.textContent.trim() || NAMA_KOSONG;
-    const kepsekNip = document.getElementById('sig-nip-kepsek-' + suffix)?.textContent.trim() || formatNip('');
-    const guruName = document.getElementById('sig-name-guru-' + suffix)?.textContent.trim() || NAMA_KOSONG;
-    const guruNip = document.getElementById('sig-nip-guru-' + suffix)?.textContent.trim() || formatNip('');
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...PDF_INK_SOFT);
-    doc.text('Mengetahui,', leftX, sigY);
-    doc.text('Kepala Sekolah,', leftX, sigY + 5);
-    doc.text(`Sumpiuh, ${tanggalOtomatis}`, rightX, sigY);
-    doc.text('Guru Literasi,', rightX, sigY + 5);
-
-    const nameY = sigY + 22;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(...PDF_INK);
-    doc.text(kepsekName, leftX, nameY);
-    doc.text(guruName, rightX, nameY);
-    doc.setDrawColor(...PDF_INK);
-    doc.setLineWidth(0.2);
-    doc.line(leftX, nameY + 1, leftX + doc.getTextWidth(kepsekName), nameY + 1);
-    doc.line(rightX, nameY + 1, rightX + doc.getTextWidth(guruName), nameY + 1);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...PDF_INK_SOFT);
-    doc.text(kepsekNip, leftX, nameY + 5);
-    doc.text(guruNip, rightX, nameY + 5);
 
     // ---- Catatan kaki + nomor halaman di semua halaman ----
     const pageCount = doc.internal.getNumberOfPages();
@@ -3517,6 +3568,7 @@
       columnStyles: COLSTYLE_ROSTER,
       rows,
       filename: `ceklis-${currentUser.kelas || 'kelas'}-${siswaSelectedTanggal}.pdf`,
+      signature: false,
     });
   });
 
