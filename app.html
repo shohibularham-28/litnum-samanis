@@ -805,6 +805,50 @@
   .link-btn:hover{color:var(--ink);}
   .link-btn.danger{color:var(--clay);}
 
+  .action-btn{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:6px 12px;
+    cursor:pointer;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .action-btn:hover{border-color:var(--ink-faint);}
+  .action-btn.open{border-color:var(--ink-faint); background:var(--paper);}
+
+  .action-menu{
+    position:fixed;
+    z-index:1000;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:160px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:10px;
+    padding:6px;
+    box-shadow:0 10px 28px rgba(0,0,0,.14);
+  }
+  .action-menu-item{
+    font-family:'Inter',sans-serif;
+    text-align:left;
+    background:none;
+    border:none;
+    padding:9px 12px;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .action-menu-item:hover{background:var(--paper);}
+  .action-menu-item.danger{color:var(--clay);}
+  .action-menu-item.danger:hover{background:var(--clay-soft);}
+
   .table-scroll{
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
@@ -825,7 +869,7 @@
     #import-form, #import-form-siswa, #import-form-kelas,
     #import-result-wrap, #import-result-wrap-siswa, #import-result-wrap-kelas,
     #delete-selected-btn, #delete-selected-btn-siswa,
-    .checkbox-col,
+    .checkbox-col, .action-menu,
     .add-form, .print-row, .save-bar-actions, .calendar-nav{
       display:none !important;
     }
@@ -1686,13 +1730,75 @@
     return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   }
 
+  // ------------------------------------------------------------------
+  // Menu aksi baris (Edit / Ganti Sandi / Hapus digabung jadi 1 tombol "Aksi")
+  // ------------------------------------------------------------------
+  let openActionMenuEl = null;
+  let openActionMenuBtn = null;
+
+  function closeRowActionMenu(){
+    if(openActionMenuEl){ openActionMenuEl.remove(); openActionMenuEl = null; }
+    if(openActionMenuBtn){ openActionMenuBtn.classList.remove('open'); openActionMenuBtn = null; }
+    document.removeEventListener('click', onDocClickCloseActionMenu, true);
+    window.removeEventListener('scroll', closeRowActionMenu, true);
+    window.removeEventListener('resize', closeRowActionMenu, true);
+  }
+
+  function onDocClickCloseActionMenu(e){
+    if(openActionMenuEl && !openActionMenuEl.contains(e.target) && e.target !== openActionMenuBtn){
+      closeRowActionMenu();
+    }
+  }
+
+  // items: [{label, danger?, onClick}]
+  function openRowActionMenu(anchorBtn, items){
+    const wasOpenFor = openActionMenuBtn;
+    closeRowActionMenu();
+    if(wasOpenFor === anchorBtn) return; // klik ulang tombol yang sama -> tutup saja
+
+    const menu = document.createElement('div');
+    menu.className = 'action-menu';
+    menu.innerHTML = items.map((it,idx)=>
+      `<button type="button" class="action-menu-item ${it.danger ? 'danger' : ''}" data-idx="${idx}">${esc(it.label)}</button>`
+    ).join('');
+    document.body.appendChild(menu);
+
+    const rect = anchorBtn.getBoundingClientRect();
+    const menuW = menu.offsetWidth, menuH = menu.offsetHeight;
+    let left = rect.right - menuW;
+    if(left < 8) left = Math.max(8, rect.left);
+    if(left + menuW > window.innerWidth - 8) left = window.innerWidth - menuW - 8;
+    let top = rect.bottom + 6;
+    if(top + menuH > window.innerHeight - 8) top = rect.top - menuH - 6;
+    menu.style.left = `${Math.max(8, left)}px`;
+    menu.style.top = `${Math.max(8, top)}px`;
+
+    menu.querySelectorAll('.action-menu-item').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const item = items[Number(btn.dataset.idx)];
+        closeRowActionMenu();
+        item.onClick();
+      });
+    });
+
+    anchorBtn.classList.add('open');
+    openActionMenuEl = menu;
+    openActionMenuBtn = anchorBtn;
+    setTimeout(()=>{
+      document.addEventListener('click', onDocClickCloseActionMenu, true);
+      window.addEventListener('scroll', closeRowActionMenu, true);
+      window.addEventListener('resize', closeRowActionMenu, true);
+    }, 0);
+  }
+
   function userViewRowHtml(u, no){
     const isSelf = currentUser?.id === u.id;
     return `<td class="checkbox-col"><input type="checkbox" class="user-row-checkbox" data-id="${u.id}" ${isSelf ? 'disabled title="Tidak bisa menghapus akun sendiri"' : ''}></td>
       <td class="no-col">${no}</td>
       <td>${esc(u.full_name)}</td><td><span class="role-tag ${u.role}">${u.role}</span></td><td>${u.nip || "—"}</td><td>${u.kelas || "—"}</td>
       <td>${statusLabelUser(u)}</td>
-      <td class="row-actions"><button class="link-btn" data-edit="${u.id}">Edit</button><button class="link-btn" data-pw="${u.id}">Ganti Sandi</button><button class="link-btn danger" data-del="${u.id}">Hapus</button></td>`;
+      <td class="row-actions"><button type="button" class="action-btn" data-aksi="${u.id}">Aksi ▾</button></td>`;
   }
 
   function kelasOptionsHtml(selected){
@@ -1851,34 +1957,43 @@
       });
     });
     updateDeleteSelectedBtn();
-    userBody.querySelectorAll('[data-del]').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        if(!confirm('Hapus akun ini? Tindakan tidak bisa dibatalkan.')) return;
-        try{
-          await callManageUser('delete', { id: btn.dataset.del });
-          await refreshAdminData();
-        }catch(e){ alert('Gagal menghapus: ' + e.message); }
-      });
-    });
-    userBody.querySelectorAll('[data-pw]').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        const u = profilesData.find(p=>p.id === btn.dataset.pw);
+    userBody.querySelectorAll('[data-aksi]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const u = profilesData.find(p=>p.id === btn.dataset.aksi);
         if(!u) return;
-        const password = prompt(`Kata sandi baru untuk ${u.full_name} (kosongkan untuk batal):`, '');
-        if(password === null || !password.trim()) return;
-        if(password.trim().length < 6){ alert('Kata sandi minimal 6 karakter. Tidak disimpan.'); return; }
-        try{
-          await callManageUser('update', { id: u.id, password: password.trim() });
-          alert('Kata sandi berhasil diubah.');
-        }catch(e){ alert('Gagal mengubah kata sandi: ' + e.message); }
-      });
-    });
-    userBody.querySelectorAll('[data-edit]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const u = profilesData.find(p=>p.id === btn.dataset.edit);
-        if(!u) return;
-        const tr = btn.closest('tr');
-        enterUserEditMode(tr, u);
+        openRowActionMenu(btn, [
+          {
+            label: 'Edit',
+            onClick: ()=>{
+              const tr = btn.closest('tr');
+              enterUserEditMode(tr, u);
+            },
+          },
+          {
+            label: 'Ganti Sandi',
+            onClick: async ()=>{
+              const password = prompt(`Kata sandi baru untuk ${u.full_name} (kosongkan untuk batal):`, '');
+              if(password === null || !password.trim()) return;
+              if(password.trim().length < 6){ alert('Kata sandi minimal 6 karakter. Tidak disimpan.'); return; }
+              try{
+                await callManageUser('update', { id: u.id, password: password.trim() });
+                alert('Kata sandi berhasil diubah.');
+              }catch(err){ alert('Gagal mengubah kata sandi: ' + err.message); }
+            },
+          },
+          {
+            label: 'Hapus',
+            danger: true,
+            onClick: async ()=>{
+              if(!confirm('Hapus akun ini? Tindakan tidak bisa dibatalkan.')) return;
+              try{
+                await callManageUser('delete', { id: u.id });
+                await refreshAdminData();
+              }catch(err){ alert('Gagal menghapus: ' + err.message); }
+            },
+          },
+        ]);
       });
     });
   }
@@ -2730,32 +2845,35 @@
   // ------------------------------------------------------------------
   function renderAllClassTabsGuru(){
     const namaKelas = kelasData.map(k=>k.nama);
-    const harianWrap = document.getElementById('guru-harian-class-tabs');
-    const bulananWrap = document.getElementById('guru-bulanan-class-tabs');
-    const siswaWrap = document.getElementById('guru-siswa-class-tabs');
 
-    // "Kelola Siswa" hanya menampilkan kelas di mana guru ybs adalah wali
+    // Guru hanya boleh melihat rekap & mengelola siswa di kelas yang ia ampu
+    // (kelas di mana ia terdaftar sebagai wali). Admin tetap melihat semua kelas.
     const namaKelasWali = currentUser?.role === 'guru'
       ? kelasData.filter(k=>k.wali_guru_id === currentUser.id).map(k=>k.nama)
       : namaKelas;
 
-    if(namaKelas.length === 0){
-      harianWrap.innerHTML = '<option value="">Belum ada kelas</option>';
-      bulananWrap.innerHTML = '<option value="">Belum ada kelas</option>';
-      siswaWrap.innerHTML = '<option value="">Belum ada kelas</option>';
+    const harianWrap = document.getElementById('guru-harian-class-tabs');
+    const bulananWrap = document.getElementById('guru-bulanan-class-tabs');
+    const siswaWrap = document.getElementById('guru-siswa-class-tabs');
+
+    if(namaKelasWali.length === 0){
+      const emptyMsg = currentUser?.role === 'guru'
+        ? '<option value="">Anda belum menjadi wali kelas manapun</option>'
+        : '<option value="">Belum ada kelas</option>';
+      harianWrap.innerHTML = emptyMsg;
+      bulananWrap.innerHTML = emptyMsg;
+      siswaWrap.innerHTML = emptyMsg;
       renderRecap(null); updateGuruHarianCaption(); renderBulanan(null); renderSiswaKelola(null);
       return;
     }
 
-    harianWrap.innerHTML = namaKelas.map(n=>`<option value="${n}">${n}</option>`).join('');
-    bulananWrap.innerHTML = namaKelas.map(n=>`<option value="${n}">${n}</option>`).join('');
-    siswaWrap.innerHTML = namaKelasWali.length
-      ? namaKelasWali.map(n=>`<option value="${n}">${n}</option>`).join('')
-      : '<option value="">Anda belum menjadi wali kelas manapun</option>';
+    harianWrap.innerHTML = namaKelasWali.map(n=>`<option value="${n}">${n}</option>`).join('');
+    bulananWrap.innerHTML = namaKelasWali.map(n=>`<option value="${n}">${n}</option>`).join('');
+    siswaWrap.innerHTML = namaKelasWali.map(n=>`<option value="${n}">${n}</option>`).join('');
 
-    harianWrap.value = namaKelas[0];
-    bulananWrap.value = namaKelas[0];
-    if(namaKelasWali.length) siswaWrap.value = namaKelasWali[0];
+    harianWrap.value = namaKelasWali[0];
+    bulananWrap.value = namaKelasWali[0];
+    siswaWrap.value = namaKelasWali[0];
 
     harianWrap.addEventListener('change', async ()=>{
       await renderRecap(harianWrap.value);
@@ -2768,10 +2886,10 @@
       renderSiswaKelola(siswaWrap.value || null);
     });
 
-    renderRecap(namaKelas[0]);
+    renderRecap(namaKelasWali[0]);
     updateGuruHarianCaption();
-    renderBulanan(namaKelas[0]);
-    renderSiswaKelola(namaKelasWali[0] || null);
+    renderBulanan(namaKelasWali[0]);
+    renderSiswaKelola(namaKelasWali[0]);
   }
 
   // ---- Guru: Rekap Harian ----
@@ -2911,7 +3029,7 @@
   function updateGuruHarianCaption(){
     const kelasSel = document.getElementById('guru-harian-class-tabs');
     if(!kelasSel || !kelasSel.value){
-      recapCaption.innerHTML = 'Belum ada kelas. Tambahkan kelas lewat tab Admin → Kelas.';
+      recapCaption.innerHTML = 'Anda belum menjadi wali kelas manapun, sehingga belum ada rekap yang bisa ditampilkan.';
       return;
     }
     const kelas = kelasSel.value;
@@ -2937,7 +3055,7 @@
     return `<td class="checkbox-col"><input type="checkbox" class="siswa-row-checkbox" data-id="${r.id}"></td>
       <td>${i+1}</td><td>${esc(r.full_name)}</td>
       <td><span class="role-tag ${tagClass}">${label}</span></td>
-      <td class="row-actions"><button class="link-btn" data-edit-s="${r.id}">Edit</button><button class="link-btn" data-pw-s="${r.id}">Ganti Sandi</button><button class="link-btn danger" data-del-s="${r.id}">Hapus</button></td>`;
+      <td class="row-actions"><button type="button" class="action-btn" data-aksi-s="${r.id}">Aksi ▾</button></td>`;
   }
 
   function enterSiswaEditMode(tr, r, i){
@@ -3000,33 +3118,42 @@
       });
     });
     updateDeleteSelectedSiswaBtn();
-    siswaKelolaBody.querySelectorAll('[data-del-s]').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        if(!confirm('Hapus siswa ini?')) return;
-        try{ await callManageUser('delete', { id: btn.dataset.delS }); await refreshAdminData(); }
-        catch(e){ alert('Gagal menghapus: ' + e.message); }
-      });
-    });
-    siswaKelolaBody.querySelectorAll('[data-pw-s]').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        const s = profilesData.find(p=>p.id===btn.dataset.pwS);
+    siswaKelolaBody.querySelectorAll('[data-aksi-s]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const s = profilesData.find(p=>p.id === btn.dataset.aksiS);
         if(!s) return;
-        const password = prompt(`Kata sandi baru untuk ${s.full_name} (kosongkan untuk batal):`, '');
-        if(password === null || !password.trim()) return;
-        if(password.trim().length < 6){ alert('Kata sandi minimal 6 karakter. Tidak disimpan.'); return; }
-        try{
-          await callManageUser('update', { id: s.id, password: password.trim() });
-          alert('Kata sandi siswa berhasil diubah.');
-        }catch(e){ alert('Gagal mengubah kata sandi: ' + e.message); }
-      });
-    });
-    siswaKelolaBody.querySelectorAll('[data-edit-s]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const s = profilesData.find(p=>p.id===btn.dataset.editS);
-        if(!s) return;
-        const tr = btn.closest('tr');
-        const i = Array.from(siswaKelolaBody.children).indexOf(tr);
-        enterSiswaEditMode(tr, s, i);
+        openRowActionMenu(btn, [
+          {
+            label: 'Edit',
+            onClick: ()=>{
+              const tr = btn.closest('tr');
+              const i = Array.from(siswaKelolaBody.children).indexOf(tr);
+              enterSiswaEditMode(tr, s, i);
+            },
+          },
+          {
+            label: 'Ganti Sandi',
+            onClick: async ()=>{
+              const password = prompt(`Kata sandi baru untuk ${s.full_name} (kosongkan untuk batal):`, '');
+              if(password === null || !password.trim()) return;
+              if(password.trim().length < 6){ alert('Kata sandi minimal 6 karakter. Tidak disimpan.'); return; }
+              try{
+                await callManageUser('update', { id: s.id, password: password.trim() });
+                alert('Kata sandi siswa berhasil diubah.');
+              }catch(err){ alert('Gagal mengubah kata sandi: ' + err.message); }
+            },
+          },
+          {
+            label: 'Hapus',
+            danger: true,
+            onClick: async ()=>{
+              if(!confirm('Hapus siswa ini?')) return;
+              try{ await callManageUser('delete', { id: s.id }); await refreshAdminData(); }
+              catch(err){ alert('Gagal menghapus: ' + err.message); }
+            },
+          },
+        ]);
       });
     });
   }
@@ -3220,7 +3347,7 @@
   async function renderBulanan(kelas){
     bulananBody.innerHTML = "";
     if(!kelas){
-      bulananCaption.innerHTML = 'Belum ada kelas. Tambahkan kelas lewat tab Admin → Kelas.';
+      bulananCaption.innerHTML = 'Anda belum menjadi wali kelas manapun, sehingga belum ada rekap yang bisa ditampilkan.';
       bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
       return;
     }
