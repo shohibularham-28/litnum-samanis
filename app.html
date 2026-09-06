@@ -1,0 +1,3606 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LITNUM SMANIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F6F3EC;
+    --card: #FFFFFF;
+    --ink: #211F1B;
+    --ink-soft: #746C5E;
+    --ink-faint: #A79E8C;
+    --rule: #E6E0D2;
+    --cover: #2E6B5B;
+    --cover-dark: #234F43;
+    --cover-soft: #E4F0EA;
+    --amber: #B4802B;
+    --amber-soft: #F6EAD3;
+    --clay: #B14F3D;
+    --clay-soft: #F5E2DC;
+    --shadow-sm: 0 1px 2px rgba(33,31,27,.05);
+    --shadow-md: 0 10px 28px -12px rgba(33,31,27,.18);
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 9px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  h1,h2,h3{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    margin:0;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .app{
+    max-width:1000px;
+    margin:0 auto;
+    padding:28px 20px 70px;
+  }
+
+  /* Masthead */
+  .masthead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding-bottom:22px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .masthead .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    background:linear-gradient(155deg, var(--cover), var(--cover-dark));
+    color:#fff;
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.02em;
+    flex-shrink:0;
+  }
+  .brand-text{display:flex; flex-direction:column; gap:2px;}
+  .masthead h1{
+    font-size:20px;
+  }
+  .masthead .tagline{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-family:'Inter', sans-serif;
+  }
+  .masthead-right{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .masthead .date{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .user-chip{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:999px;
+    padding:6px 14px 6px 6px;
+    box-shadow:var(--shadow-sm);
+  }
+  .user-avatar{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    background:var(--cover-soft);
+    color:var(--cover-dark);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+  }
+  .user-meta{display:flex; flex-direction:column; line-height:1.25;}
+  .user-name{font-size:12.5px; font-weight:600;}
+  .user-role{font-size:11px; color:var(--ink-soft);}
+  .logout-btn{
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .logout-btn:hover{border-color:var(--clay); color:var(--clay);}
+
+  /* Role switcher (segmented control) */
+  .role-tabs{
+    display:inline-flex;
+    gap:2px;
+    background:var(--rule);
+    padding:4px;
+    border-radius:999px;
+    margin-bottom:10px;
+    max-width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .role-tabs::-webkit-scrollbar{display:none;}
+  .role-tab{
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 18px;
+    background:transparent;
+    color:var(--ink-soft);
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .role-tab.active{
+    background:var(--card);
+    color:var(--ink);
+    box-shadow:var(--shadow-sm);
+  }
+  .role-tab:not(.active):hover{
+    color:var(--ink);
+  }
+  .role-note{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 2px 20px;
+  }
+
+  .panel{
+    display:none;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:var(--radius-lg);
+    padding:28px;
+    box-shadow:var(--shadow-md);
+  }
+  .panel.active{display:block;}
+
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .panel-head h2{font-size:18px;}
+  .panel-head .sub{font-size:13px; color:var(--ink-soft); margin-top:4px; max-width:52ch;}
+
+  .pill-btn{
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink);
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .pill-btn:hover{border-color:var(--ink-faint);}
+  .pill-btn:disabled{opacity:.45; cursor:not-allowed;}
+  .pill-btn.solid{
+    background:var(--cover);
+    border-color:var(--cover);
+    color:#fff;
+  }
+  .pill-btn.solid:hover{background:var(--cover-dark); border-color:var(--cover-dark);}
+  .pill-btn.danger-outline{border-color:var(--clay); color:var(--clay); background:var(--card);}
+  .pill-btn.danger-outline:hover{background:var(--clay-soft);}
+  .checkbox-col{width:32px; text-align:center;}
+
+  /* ===== SISWA VIEW ===== */
+  .class-badge{
+    display:inline-block;
+    font-size:12px;
+    font-weight:600;
+    background:var(--cover-soft);
+    color:var(--cover-dark);
+    padding:5px 12px;
+    border-radius:999px;
+    margin-bottom:16px;
+  }
+
+  .siswa-view{display:none;}
+  .siswa-view.active{display:block;}
+
+  .back-link{
+    background:none;
+    border:none;
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    padding:0;
+    margin-bottom:18px;
+  }
+  .back-link:hover{color:var(--ink);}
+
+  .kegiatan-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .kegiatan-card{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    border:1px solid var(--rule);
+    border-radius:var(--radius-md);
+    padding:16px 18px;
+    background:var(--card);
+    cursor:pointer;
+    transition:box-shadow .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .kegiatan-card:hover{border-color:var(--cover); box-shadow:var(--shadow-md); transform:translateY(-1px);}
+  .kegiatan-card.done{opacity:.7;}
+  .kegiatan-card.locked{cursor:default;}
+  .kegiatan-card.locked:hover{border-color:var(--rule); box-shadow:none; transform:none;}
+  .kegiatan-card .k-title{
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    margin-bottom:4px;
+  }
+  .kegiatan-card .k-period{font-size:12px; color:var(--ink-soft);}
+  .kegiatan-card .k-status{
+    font-size:11px;
+    font-weight:600;
+    padding:5px 12px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .kegiatan-card .k-status.aktif{background:var(--cover-soft); color:var(--cover-dark);}
+  .kegiatan-card .k-status.selesai{background:var(--rule); color:var(--ink-soft);}
+  .kegiatan-card .k-status.locked{background:var(--clay-soft); color:var(--clay);}
+
+  .calendar{
+    border:1px solid var(--rule);
+    border-radius:var(--radius-md);
+    padding:16px 18px 18px;
+    margin-bottom:22px;
+    background:var(--paper);
+  }
+  .calendar-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .calendar-head span{font-size:13.5px; font-weight:700; font-family:'Plus Jakarta Sans',sans-serif;}
+  .calendar-nav{display:flex; gap:6px;}
+  .calendar-nav button{
+    border:1px solid var(--rule);
+    background:var(--card);
+    width:26px; height:26px;
+    border-radius:8px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+    text-align:center;
+  }
+  .cal-grid .dow{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+    padding-bottom:4px;
+  }
+  .cal-day{
+    font-size:13px;
+    padding:8px 0;
+    border-radius:8px;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .cal-day:hover{background:var(--card);}
+  .cal-day.muted{color:var(--ink-faint); cursor:default;}
+  .cal-day.selected{
+    background:var(--cover);
+    color:#fff;
+    font-weight:700;
+  }
+
+  .roster{
+    border-top:1px solid var(--rule);
+  }
+  .roster-row{
+    display:grid;
+    grid-template-columns:26px 1fr auto;
+    align-items:center;
+    gap:12px;
+    padding:13px 2px;
+    border-bottom:1px solid var(--rule);
+  }
+  .roster-row .num{font-size:12px; color:var(--ink-faint); font-family:'Plus Jakarta Sans',sans-serif; font-weight:600;}
+  .roster-row .name{font-size:14.5px; font-weight:500;}
+  .print-status{display:none;}
+  .status-group{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .status-btn{
+    font-size:12px;
+    font-weight:600;
+    padding:7px 12px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .status-btn[data-status="hadir"].active{
+    background:var(--cover);
+    border-color:var(--cover);
+    color:#fff;
+  }
+  .status-btn[data-status="tidak"].active{
+    background:var(--clay-soft);
+    border-color:var(--clay);
+    color:var(--clay);
+  }
+  .status-select{
+    font-size:12px;
+    font-weight:600;
+    padding:7px 10px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    font-family:'Inter',sans-serif;
+  }
+  .status-select.amber{background:var(--amber-soft); border-color:var(--amber); color:var(--amber);}
+  .status-select.clay{background:var(--clay-soft); border-color:var(--clay); color:var(--clay);}
+
+  .save-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:20px;
+    padding-top:16px;
+    border-top:1px solid var(--rule);
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .save-bar .info{font-size:12.5px; color:var(--ink-soft);}
+  .save-bar-actions{display:flex; gap:8px;}
+  .print-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:14px;
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid var(--rule);
+    flex-wrap:wrap;
+  }
+  .signature-block{
+    display:flex;
+    justify-content:space-between;
+    gap:24px;
+    margin-top:36px;
+    padding-top:22px;
+    border-top:1px solid var(--rule);
+    font-size:13px;
+    flex-wrap:wrap;
+  }
+  .sig-col{width:230px;}
+  .sig-line1{margin-bottom:2px; color:var(--ink-soft);}
+  .sig-role{margin-bottom:0; color:var(--ink-soft);}
+  .sig-space{height:60px;}
+  .sig-name{font-weight:700; text-decoration:underline; text-underline-offset:3px;}
+  .sig-nip{font-size:11.5px; color:var(--ink-soft); margin-top:3px;}
+
+  .ttd-picker{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .ttd-picker select{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink);
+  }
+
+  /* ===== GURU VIEW ===== */
+  .class-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .class-tab{
+    font-size:13px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .class-tab.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+
+  .recap-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  .recap-table th{
+    text-align:left;
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-weight:700;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    padding:9px 8px;
+    border-bottom:1px solid var(--rule);
+  }
+  .recap-table td{
+    padding:11px 8px;
+    border-bottom:1px solid var(--rule);
+  }
+  .recap-table tr:hover td{background:var(--paper);}
+  .edit-input{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    padding:7px 9px;
+    border-radius:8px;
+    border:1px solid var(--rule);
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .edit-input:focus{
+    outline:2px solid var(--cover);
+    outline-offset:1px;
+    background:var(--card);
+  }
+  .edit-input:disabled{color:var(--ink-faint); cursor:not-allowed;}
+  .badge{
+    font-size:11.5px;
+    font-weight:600;
+    padding:5px 11px;
+    border-radius:999px;
+    display:inline-block;
+    cursor:pointer;
+    border:1px solid transparent;
+  }
+  .badge.hadir{background:var(--cover-soft); color:var(--cover-dark);}
+  .badge.tidak{background:var(--clay-soft); color:var(--clay);}
+  .badge.izin{background:var(--amber-soft); color:var(--amber);}
+  .edit-hint{font-size:11px; color:var(--ink-faint); margin-top:12px;}
+  .empty-state{
+    font-size:13px;
+    color:var(--ink-soft);
+    text-align:center;
+    padding:20px 12px;
+    display:block;
+  }
+  td.empty-state{padding:16px 8px;}
+
+  .filter-row{
+    display:flex;
+    gap:24px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+  }
+  .filter-block{flex:1; min-width:220px;}
+  .filter-label{
+    font-size:11px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:9px;
+    font-family:'Plus Jakarta Sans',sans-serif;
+  }
+  .calendar-compact{padding:12px 14px 14px; max-width:280px;}
+  .recap-caption{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:12px;
+  }
+  .recap-caption strong{color:var(--ink);}
+
+  .month-picker{display:flex; gap:8px;}
+  .month-picker select{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 12px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink);
+  }
+  .month-picker-select{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink);
+    max-width:100%;
+  }
+  .kegiatan-auto{
+    font-family:'Inter',sans-serif;
+    padding:8px 14px;
+    border-radius:14px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    min-height:38px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+    max-width:100%;
+  }
+  .kegiatan-auto-judul{font-size:13px; font-weight:700; color:var(--ink);}
+  .kegiatan-auto-desc{font-size:11.5px; color:var(--ink-soft); line-height:1.4;}
+  .kegiatan-auto.empty .kegiatan-auto-judul{color:var(--ink-faint); font-weight:600;}
+  .date-input{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink);
+    max-width:100%;
+  }
+  .class-tab-m{
+    font-size:13px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+    display:inline-block;
+  }
+  .class-tab-m.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .class-tab-s{
+    font-size:13px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+    display:inline-block;
+  }
+  .class-tab-s.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .recap-monthly th, .recap-monthly td{text-align:center;}
+  .recap-monthly th:nth-child(2), .recap-monthly td:nth-child(2){text-align:left;}
+  .recap-monthly td.count-hadir{color:var(--cover-dark); font-weight:700;}
+  .recap-monthly td.count-tidak{color:var(--clay); font-weight:700;}
+  .recap-monthly td.count-alpha{color:var(--clay); font-weight:700;}
+
+  .stat-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .stat-card{
+    flex:1;
+    min-width:110px;
+    border:1px solid var(--rule);
+    border-radius:var(--radius-md);
+    padding:14px 16px;
+    background:var(--paper);
+  }
+  .stat-card .n{font-family:'Plus Jakarta Sans',sans-serif; font-size:22px; font-weight:800;}
+  .stat-card .n.n-text{font-size:14px; line-height:1.3;}
+  .stat-card .l{font-size:11px; color:var(--ink-soft); margin-top:3px;}
+
+  /* ===== ADMIN VIEW ===== */
+  .admin-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:20px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    padding-bottom:2px;
+  }
+  .admin-tabs::-webkit-scrollbar{display:none;}
+  .admin-tab, .guru-subtab, .rekap-subtab{
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .admin-tab{
+    font-size:13px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .admin-tab.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .admin-panel{display:none;}
+  .admin-panel.active{display:block;}
+  .guru-subtab{
+    font-size:13px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .guru-subtab.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .guru-subpanel{display:none;}
+  .guru-subpanel.active{display:block;}
+  .rekap-subtab{
+    font-size:13px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .rekap-subtab.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .rekap-subpanel{display:none;}
+  .rekap-subpanel.active{display:block;}
+
+  .add-form{
+    display:none;
+    grid-template-columns:1fr 1fr 1fr auto;
+    gap:8px;
+    background:var(--paper);
+    border:1px dashed var(--ink-faint);
+    border-radius:var(--radius-md);
+    padding:14px;
+    margin-bottom:18px;
+  }
+  .add-form.open{display:grid;}
+  .add-form input, .add-form select{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    padding:9px 12px;
+    border-radius:8px;
+    border:1px solid var(--rule);
+    background:var(--card);
+  }
+
+  .role-tag{
+    font-size:11px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:999px;
+  }
+  .role-tag.admin{background:#EDE3F5; color:#6E4A93;}
+  .role-tag.guru{background:var(--cover-soft); color:var(--cover-dark);}
+  .role-tag.siswa{background:var(--amber-soft); color:var(--amber);}
+  .role-tag.ok{background:#DCF1E3; color:#1F7A44;}
+  .role-tag.err{background:var(--clay-soft); color:var(--clay);}
+
+  .import-result-table td{vertical-align:top;}
+  .import-result-table .msg{font-size:11.5px; color:var(--ink-soft); display:block; margin-top:2px;}
+
+  .row-actions{display:flex; gap:10px;}
+  .link-btn{
+    font-size:12px;
+    font-weight:600;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:0;
+    color:var(--ink-soft);
+  }
+  .link-btn:hover{color:var(--ink);}
+  .link-btn.danger{color:var(--clay);}
+
+  .table-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  @page{
+    size: A4;
+    margin: 15mm 12mm;
+  }
+  @media print{
+    body{background:#fff; line-height:1.3;}
+    .app{max-width:100%; padding:0;}
+    .masthead .date, .masthead-right, .role-tabs, .role-note, .admin-tabs, .guru-subtab,
+    .back-link, .status-group, .row-actions,
+    #toggle-add, #toggle-add-kelas, #toggle-add-kegiatan, #toggle-add-siswa,
+    #toggle-import, #toggle-import-siswa, #toggle-import-kelas,
+    #download-template-btn, #download-template-btn-siswa, #download-template-btn-kelas,
+    #import-form, #import-form-siswa, #import-form-kelas,
+    #import-result-wrap, #import-result-wrap-siswa, #import-result-wrap-kelas,
+    #delete-selected-btn, #delete-selected-btn-siswa,
+    .checkbox-col,
+    .add-form, .print-row, .save-bar-actions, .calendar-nav{
+      display:none !important;
+    }
+    .table-scroll{overflow:visible; margin:0; padding:0;}
+    .panel.active{border:none; padding:0; box-shadow:none;}
+    .recap-table, .roster{page-break-inside:avoid;}
+
+    /* Tabel rekap: rapi & wajib bergaris penuh saat dicetak/diekspor PDF */
+    .recap-table{
+      border-collapse:collapse;
+      border:1px solid #000;
+      font-size:11px;
+    }
+    .recap-table th,
+    .recap-table td{
+      border:1px solid #000 !important;
+      padding:4px 7px;
+      line-height:1.25;
+    }
+    .recap-table tr:hover td{background:transparent;}
+
+    /* Rapatkan jarak antar elemen supaya PDF tidak terlalu longgar */
+    .panel-head{margin-bottom:8px;}
+    .panel-head .sub{margin-top:2px;}
+    .recap-caption{margin-bottom:6px; padding:8px 10px;}
+    .filter-row{margin-bottom:8px !important; gap:12px;}
+    .stat-row{margin-bottom:10px; gap:6px;}
+    .stat-card{padding:8px 10px;}
+    .edit-hint{margin-top:6px;}
+    .signature-block{margin-top:18px; padding-top:10px;}
+    .sig-space{height:44px;}
+    .roster-row{padding:6px 0; border-bottom:1px solid #000;}
+    .roster{border-top:1px solid #000;}
+    .print-status{display:inline-block !important; font-size:12.5px; font-weight:700;}
+  }
+
+  @media (max-width:700px){
+    .app{padding:16px 12px 50px;}
+    .masthead{gap:10px; padding-bottom:16px; margin-bottom:16px;}
+    .masthead h1{font-size:17px;}
+    .masthead .tagline{display:none;}
+    .masthead .date{display:none;}
+    .masthead-right{width:100%; justify-content:space-between;}
+    .user-meta{display:none;}
+    .user-chip{padding:6px;}
+
+    .panel{padding:16px;}
+    .panel-head{gap:10px;}
+    .panel-head h2{font-size:16px;}
+
+    .role-note{margin-bottom:14px;}
+
+    .filter-row{gap:14px; margin-bottom:16px;}
+    .filter-block{flex:1 1 100%; min-width:0; width:100%;}
+    .month-picker-select, .date-input{width:100%;}
+    .month-picker{gap:8px; width:100%;}
+    .month-picker select{flex:1; min-width:0;}
+
+    .stat-row{gap:8px;}
+    .stat-card{min-width:calc(50% - 4px); padding:12px 14px;}
+
+    /* Form grids: force single column & full-width fields, overriding any
+       inline grid-template-columns set per-form in the markup. */
+    .add-form{grid-template-columns:1fr !important; padding:12px;}
+    .add-form input, .add-form select, .add-form button{width:100%;}
+
+    .roster-row{grid-template-columns:20px 1fr; row-gap:8px;}
+    .status-group{grid-column:1 / -1; justify-content:flex-start;}
+
+    .recap-table{font-size:12px;}
+    .table-scroll .recap-table{width:auto; min-width:100%;}
+    .table-scroll{margin:0 -16px; padding:0 16px;}
+    .table-scroll .recap-table{margin:0;}
+
+    .signature-block{gap:20px 24px;}
+    .sig-col{width:100%;}
+
+    .print-row{justify-content:flex-start; gap:10px;}
+    .ttd-picker{width:100%; justify-content:space-between;}
+    .ttd-picker select{flex:1; min-width:0;}
+
+    .save-bar{flex-direction:column; align-items:stretch;}
+    .save-bar-actions{width:100%;}
+    .save-bar-actions button{flex:1;}
+
+    .kegiatan-card{flex-wrap:wrap;}
+
+    .row-actions{flex-wrap:wrap; gap:8px 12px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="brand">
+      <span class="brand-mark">LS</span>
+      <div class="brand-text">
+        <h1>LITNUM SMANIS</h1>
+        <span class="tagline">Rekap kegiatan membaca sekolah</span>
+      </div>
+    </div>
+    <div class="masthead-right">
+      <div class="date" id="today-date">Kamis, 5 September 2026</div>
+      <div class="user-chip">
+        <span class="user-avatar" id="user-avatar">?</span>
+        <div class="user-meta">
+          <span class="user-name" id="user-name">Memuat…</span>
+          <span class="user-role" id="user-role-label">—</span>
+        </div>
+      </div>
+      <button class="logout-btn" id="logout-btn" title="Keluar">Keluar</button>
+    </div>
+  </div>
+
+  <div class="role-tabs" id="role-tabs">
+    <div class="role-tab active" data-role="siswa">Siswa (Petugas)</div>
+    <div class="role-tab" data-role="guru">Guru</div>
+    <div class="role-tab" data-role="admin">Admin</div>
+  </div>
+  <div class="role-note" id="role-note">Tampilan mengikuti peran akun yang sedang masuk.</div>
+
+  <!-- ============ SISWA PANEL ============ -->
+  <div class="panel active" id="panel-siswa">
+    <span class="class-badge" id="siswa-class-badge">Belum ada data kelas</span>
+
+    <!-- Landing: daftar pengumuman kegiatan -->
+    <div class="siswa-view active" id="siswa-list">
+      <div class="panel-head">
+        <div>
+          <h2>Pengumuman Kegiatan Literasi</h2>
+          <div class="sub">Pilih kegiatan yang diumumkan admin untuk mulai mengisi ceklis.</div>
+        </div>
+      </div>
+
+      <div class="kegiatan-list" id="kegiatan-list"></div>
+    </div>
+
+    <!-- Detail: calendar + ceklis untuk kegiatan terpilih -->
+    <div class="siswa-view" id="siswa-detail">
+      <button class="back-link" id="back-to-list">← Kembali ke daftar kegiatan</button>
+
+      <div class="panel-head">
+        <div>
+          <h2 id="detail-judul">Isi Ceklis Literasi</h2>
+          <div class="sub" id="detail-periode">Pilih tanggal, lalu tandai status tiap teman sekelas.</div>
+          <div class="sub" id="detail-deskripsi" style="display:none; margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <div class="filter-row" style="margin-bottom:14px;">
+        <div class="filter-block" style="flex:none; min-width:0;">
+          <div class="filter-label">Tanggal</div>
+          <div class="date-input" id="siswa-tanggal-display" style="cursor:default;" title="Tanggal mengikuti tanggal mulai kegiatan yang ditentukan admin — tidak bisa diubah petugas.">–</div>
+        </div>
+      </div>
+
+      <div class="roster" id="roster-list"></div>
+
+      <div class="save-bar">
+        <span class="info">7 dari 9 siswa sudah ditandai</span>
+        <div class="save-bar-actions">
+          <div class="ttd-picker">
+            Kepala Sekolah:
+            <select id="ttd-kepsek-siswa"></select>
+          </div>
+          <div class="ttd-picker">
+            Guru Literasi:
+            <select id="ttd-guru-siswa"></select>
+          </div>
+          <button class="pill-btn" id="print-siswa">📄 Unduh PDF (A4)</button>
+          <button class="pill-btn solid">Simpan Ceklis</button>
+        </div>
+      </div>
+
+      <div class="signature-block" id="sig-siswa"></div>
+    </div>
+  </div>
+
+  <!-- ============ GURU PANEL ============ -->
+  <div class="panel" id="panel-guru">
+    <div class="panel-head">
+      <div>
+        <h2>Rekap Literasi</h2>
+        <div class="sub">Lihat rekap harian atau rekap bulanan per kelas.</div>
+      </div>
+    </div>
+
+    <div class="admin-tabs">
+      <div class="guru-subtab active" data-guruview="harian">Rekap Harian</div>
+      <div class="guru-subtab" data-guruview="bulanan">Rekap Bulanan</div>
+      <div class="guru-subtab" data-guruview="siswa">Kelola Siswa</div>
+    </div>
+
+    <div class="guru-subpanel active" id="guru-harian">
+    <div class="filter-row">
+      <div class="filter-block">
+        <div class="filter-label">Kegiatan Literasi</div>
+        <div class="kegiatan-auto" id="guru-kegiatan-display">
+          <div class="kegiatan-auto-judul" id="guru-kegiatan-judul">–</div>
+          <div class="kegiatan-auto-desc" id="guru-kegiatan-desc"></div>
+        </div>
+      </div>
+
+      <div class="filter-block">
+        <div class="filter-label">Kelas</div>
+        <select class="month-picker-select" id="guru-harian-class-tabs"></select>
+      </div>
+
+      <div class="filter-block">
+        <div class="filter-label">Tanggal</div>
+        <input type="date" class="date-input" id="guru-harian-tanggal-input">
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card"><div class="n" id="stat-guru-hadir">–</div><div class="l">Mengerjakan</div></div>
+      <div class="stat-card"><div class="n" id="stat-guru-tidak">–</div><div class="l">Tidak mengerjakan</div></div>
+      <div class="stat-card"><div class="n" id="stat-guru-izin">–</div><div class="l">Izin / sakit</div></div>
+      <div class="stat-card"><div class="n" id="stat-guru-petugas">–</div><div class="l">Petugas hari ini</div></div>
+    </div>
+
+    <div class="recap-caption" id="guru-harian-caption">
+      <strong id="guru-harian-kegiatan">Gerakan Literasi Semester Ganjil</strong> · Menampilkan <strong>Kelas X-A</strong> — <strong>Jumat, 5 September 2026</strong>
+    </div>
+    <table class="recap-table" id="recap-table">
+      <thead>
+        <tr><th>No</th><th>Nama Siswa</th><th>Status</th></tr>
+      </thead>
+      <tbody id="recap-body"></tbody>
+    </table>
+    <div class="edit-hint">Klik badge status untuk mengedit ceklis siswa.</div>
+    <div class="signature-block" id="sig-harian"></div>
+    <div class="print-row">
+      <div class="ttd-picker">
+        Kepala Sekolah:
+        <select id="ttd-kepsek-harian"></select>
+      </div>
+      <div class="ttd-picker">
+        Guru Literasi:
+        <select id="ttd-guru-harian"></select>
+      </div>
+      <button class="pill-btn" id="print-harian">📄 Unduh PDF (A4)</button>
+    </div>
+    </div>
+
+    <div class="guru-subpanel" id="guru-bulanan">
+      <div class="filter-row">
+        <div class="filter-block">
+          <div class="filter-label">Kelas</div>
+          <select class="month-picker-select" id="guru-bulanan-class-tabs"></select>
+        </div>
+        <div class="filter-block">
+          <div class="filter-label">Bulan &amp; Tahun</div>
+          <div class="month-picker">
+            <select id="bulan-select">
+              <option>Januari</option><option>Februari</option><option>Maret</option><option>April</option>
+              <option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option>
+              <option selected>September</option><option>Oktober</option><option>November</option><option>Desember</option>
+            </select>
+            <select id="tahun-select">
+              <option>2025</option><option selected>2026</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="recap-caption" id="bulanan-caption">Rekap <strong>Kelas X-A</strong> — <strong>September 2026</strong> (18 hari efektif)</div>
+
+      <table class="recap-table recap-monthly">
+        <thead>
+          <tr>
+            <th>No</th><th>Nama Siswa</th>
+            <th>Mengerjakan</th><th>Tidak</th><th>Sakit</th><th>Ijin</th><th>Alpha</th><th>Dispen</th>
+          </tr>
+        </thead>
+        <tbody id="bulanan-body"></tbody>
+      </table>
+      <div class="edit-hint">Angka menunjukkan jumlah kemunculan status tiap siswa selama bulan terpilih.</div>
+      <div class="signature-block" id="sig-bulanan"></div>
+      <div class="print-row">
+        <div class="ttd-picker">
+          Kepala Sekolah:
+          <select id="ttd-kepsek-bulanan"></select>
+        </div>
+        <div class="ttd-picker">
+          Guru Literasi:
+          <select id="ttd-guru-bulanan"></select>
+        </div>
+        <button class="pill-btn" id="print-bulanan">📄 Unduh PDF (A4)</button>
+      </div>
+    </div>
+
+    <div class="guru-subpanel" id="guru-siswa">
+      <div class="panel-head">
+        <div>
+          <div class="sub">Guru wali kelas dapat menambah, mengubah, atau menghapus siswa di kelasnya sendiri. Guru tidak bisa mengelola siswa di kelas lain.</div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="pill-btn" id="download-template-btn-siswa">Unduh Template Excel</button>
+          <button class="pill-btn" id="toggle-import-siswa">Impor Massal (Excel)</button>
+          <button class="pill-btn solid" id="toggle-add-siswa">+ Tambah Siswa</button>
+        </div>
+      </div>
+
+      <div class="filter-block" style="margin-bottom:16px;">
+        <div class="filter-label">Kelas Anda</div>
+        <select class="month-picker-select" id="guru-siswa-class-tabs"></select>
+      </div>
+
+      <div class="add-form" id="import-form-siswa" style="grid-template-columns:1fr auto auto;">
+        <input type="file" id="import-file-input-siswa" accept=".xlsx,.xls">
+        <button class="pill-btn solid" id="import-run-btn-siswa">Impor</button>
+        <button class="pill-btn" id="import-cancel-btn-siswa">Batal</button>
+      </div>
+      <div id="import-result-wrap-siswa" style="display:none; margin-bottom:18px;">
+        <div class="edit-hint" id="import-summary-siswa"></div>
+        <table class="recap-table import-result-table">
+          <thead><tr><th>Baris</th><th>Nama</th><th>Email</th><th>Status</th></tr></thead>
+          <tbody id="import-result-body-siswa"></tbody>
+        </table>
+      </div>
+
+      <div class="add-form" id="add-form-siswa" style="grid-template-columns:1.1fr 1.1fr .9fr .8fr .8fr auto;">
+        <input type="text" id="siswa-nama-input" placeholder="Nama lengkap siswa">
+        <input type="email" id="siswa-email-input" placeholder="Email untuk login">
+        <input type="text" id="siswa-password-input" placeholder="Kata sandi (kosongkan = acak otomatis)" autocomplete="new-password">
+        <select id="siswa-jabatan-select"><option value="biasa">Siswa biasa</option><option value="petugas">Petugas ceklis</option></select>
+        <input type="text" id="siswa-nisn-input" placeholder="NISN (opsional)">
+        <button class="pill-btn solid" id="save-siswa-btn">Simpan</button>
+      </div>
+      <div class="edit-hint" id="add-siswa-result" style="display:none;"></div>
+
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <button class="pill-btn danger-outline" id="delete-selected-btn-siswa" disabled>Hapus Terpilih (0)</button>
+      </div>
+      <table class="recap-table">
+        <thead><tr><th class="checkbox-col"><input type="checkbox" id="siswa-select-all"></th><th>No</th><th>Nama Siswa</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="siswa-kelola-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN PANEL ============ -->
+  <div class="panel" id="panel-admin">
+    <div class="panel-head">
+      <div>
+        <h2>Manajemen Pengguna</h2>
+        <div class="sub">Tambah, ubah, atau hapus akun admin, guru, dan siswa.</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="pill-btn" id="download-template-btn">Unduh Template Excel</button>
+        <button class="pill-btn" id="toggle-import">Impor Massal (Excel)</button>
+        <button class="pill-btn solid" id="toggle-add">+ Tambah Pengguna</button>
+      </div>
+    </div>
+
+    <div class="admin-tabs">
+      <div class="admin-tab active" data-admin="users">Pengguna</div>
+      <div class="admin-tab" data-admin="kelas">Kelas</div>
+      <div class="admin-tab" data-admin="kegiatan">Kegiatan</div>
+      <div class="admin-tab" data-admin="rekap">Rekap</div>
+    </div>
+
+    <div class="admin-panel active" id="admin-users">
+      <div class="add-form" id="import-form" style="grid-template-columns:1fr auto auto;">
+        <input type="file" id="import-file-input" accept=".xlsx,.xls">
+        <button class="pill-btn solid" id="import-run-btn">Impor</button>
+        <button class="pill-btn" id="import-cancel-btn">Batal</button>
+      </div>
+      <div id="import-result-wrap" style="display:none; margin-bottom:18px;">
+        <div class="edit-hint" id="import-summary"></div>
+        <table class="recap-table import-result-table">
+          <thead><tr><th>Baris</th><th>Nama</th><th>Email</th><th>Status</th></tr></thead>
+          <tbody id="import-result-body"></tbody>
+        </table>
+      </div>
+
+      <div class="add-form" id="add-form" style="grid-template-columns:1.1fr 1.1fr .9fr .8fr .8fr .8fr auto;">
+        <input type="text" id="nama-user-input" placeholder="Nama lengkap">
+        <input type="email" id="email-user-input" placeholder="Email untuk login">
+        <input type="text" id="password-user-input" placeholder="Kata sandi (kosongkan = acak otomatis)" autocomplete="new-password">
+        <select id="peran-user-select"><option value="admin">Admin</option><option value="guru">Guru</option><option value="siswa">Siswa</option></select>
+        <input type="text" id="nip-user-input" placeholder="NIP/NISN (opsional)">
+        <select id="kelas-user-select"><option value="">— Kelas (jika siswa) —</option></select>
+        <button class="pill-btn solid" id="save-user-btn">Simpan</button>
+      </div>
+      <div class="edit-hint" id="add-user-result" style="display:none;"></div>
+
+      <div class="filter-row" style="margin-bottom:14px;">
+        <div class="filter-block">
+          <div class="filter-label">Jenis Pengguna</div>
+          <select class="month-picker-select" id="user-filter-role">
+            <option value="">Semua Peran</option>
+            <option value="admin">Admin</option>
+            <option value="guru">Guru</option>
+            <option value="siswa">Siswa</option>
+          </select>
+        </div>
+        <div class="filter-block">
+          <div class="filter-label">Kelas</div>
+          <select class="month-picker-select" id="user-filter-kelas">
+            <option value="">Semua Kelas</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <button class="pill-btn danger-outline" id="delete-selected-btn" disabled>Hapus Terpilih (0)</button>
+      </div>
+      <table class="recap-table">
+        <thead><tr><th class="checkbox-col"><input type="checkbox" id="user-select-all"></th><th>Nama</th><th>Peran</th><th>NIP</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="user-body"></tbody>
+      </table>
+    </div>
+
+    <div class="admin-panel" id="admin-kelas">
+      <div class="panel-head" style="margin-bottom:14px;">
+        <div class="sub">Buat kelas terlebih dahulu sebelum menambah siswa ke dalamnya.</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="pill-btn" id="download-template-btn-kelas">Unduh Template Excel</button>
+          <button class="pill-btn" id="toggle-import-kelas">Impor Massal (Excel)</button>
+          <button class="pill-btn solid" id="toggle-add-kelas">+ Tambah Kelas</button>
+        </div>
+      </div>
+
+      <div class="add-form" id="import-form-kelas" style="grid-template-columns:1fr auto auto;">
+        <input type="file" id="import-file-input-kelas" accept=".xlsx,.xls">
+        <button class="pill-btn solid" id="import-run-btn-kelas">Impor</button>
+        <button class="pill-btn" id="import-cancel-btn-kelas">Batal</button>
+      </div>
+      <div id="import-result-wrap-kelas" style="display:none; margin-bottom:18px;">
+        <div class="edit-hint" id="import-summary-kelas"></div>
+        <table class="recap-table import-result-table">
+          <thead><tr><th>Baris</th><th>Nama Kelas</th><th>Wali</th><th>Status</th></tr></thead>
+          <tbody id="import-result-body-kelas"></tbody>
+        </table>
+      </div>
+
+      <div class="add-form" id="add-form-kelas">
+        <input type="text" placeholder="Nama kelas (mis. X-A)">
+        <select id="wali-select">
+          <option value="">— Belum ada guru —</option>
+        </select>
+        <input type="text" placeholder="Tahun ajaran (mis. 2026/2027)">
+        <button class="pill-btn solid">Simpan</button>
+      </div>
+
+      <table class="recap-table">
+        <thead><tr><th>Kelas</th><th>Wali Kelas</th><th>Petugas Ceklis</th><th>Jumlah Siswa</th><th>Aksi</th></tr></thead>
+        <tbody id="kelas-body"></tbody>
+      </table>
+    </div>
+
+    <div class="admin-panel" id="admin-kegiatan">
+      <div class="panel-head" style="margin-bottom:14px;">
+        <div class="sub">Pengumuman ini akan muncul di dashboard petugas. Petugas memilih salah satu kegiatan untuk mulai mengisi kalender &amp; ceklis.</div>
+        <button class="pill-btn solid" id="toggle-add-kegiatan">+ Tambah Kegiatan</button>
+      </div>
+
+      <div class="add-form" id="add-form-kegiatan" style="grid-template-columns:1.3fr .8fr .6fr .8fr auto;">
+        <input type="text" placeholder="Judul kegiatan (mis. Tantangan Baca Buku)">
+        <input type="date" title="Tanggal mulai kegiatan">
+        <input type="time" title="Jam buka kegiatan (WIB) — petugas baru bisa mengisi ceklis setelah jam ini tercapai" value="00:00">
+        <input type="date" title="Tanggal selesai kegiatan">
+        <button class="pill-btn solid">Simpan</button>
+        <textarea rows="2" placeholder="Deskripsi kegiatan (opsional) — muncul di halaman ceklis petugas, tidak muncul di daftar kegiatan" style="grid-column:1 / -1; font-family:'Inter',sans-serif; font-size:13px; padding:9px 12px; border-radius:8px; border:1px solid var(--rule); background:var(--card); resize:vertical;"></textarea>
+      </div>
+      <div class="edit-hint" style="margin-top:-6px; margin-bottom:14px;">Urutan isian: Judul → Tanggal mulai → Jam buka (WIB) → Tanggal selesai → Deskripsi (opsional). Petugas baru bisa membuka &amp; mengisi kegiatan setelah tanggal &amp; jam buka tercapai. Deskripsi hanya tampil di halaman ceklis petugas, bukan di daftar kegiatan.</div>
+
+      <table class="recap-table">
+        <thead><tr><th>Judul Kegiatan</th><th>Periode</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="kegiatan-admin-body"></tbody>
+      </table>
+    </div>
+
+    <div class="admin-panel" id="admin-rekap">
+      <div class="panel-head" style="margin-bottom:14px;">
+        <div>
+          <div class="sub">Pantau rekap ceklis literasi seluruh kelas sekaligus, atau pilih satu kelas untuk melihat detailnya.</div>
+        </div>
+        <button class="pill-btn danger-outline" id="hapus-semua-rekap-btn">🗑️ Hapus Semua Rekap</button>
+      </div>
+
+      <div class="admin-tabs">
+        <div class="rekap-subtab active" data-rekapview="harian">Rekap Harian</div>
+        <div class="rekap-subtab" data-rekapview="bulanan">Rekap Bulanan</div>
+      </div>
+
+      <!-- Rekap Harian (semua kelas) -->
+      <div class="rekap-subpanel active" id="admin-rekap-harian">
+        <div class="filter-row">
+          <div class="filter-block">
+            <div class="filter-label">Kegiatan Literasi</div>
+            <div class="kegiatan-auto" id="admin-kegiatan-display">
+              <div class="kegiatan-auto-judul" id="admin-kegiatan-judul">–</div>
+              <div class="kegiatan-auto-desc" id="admin-kegiatan-desc"></div>
+            </div>
+          </div>
+          <div class="filter-block">
+            <div class="filter-label">Kelas</div>
+            <select class="month-picker-select" id="admin-rekap-harian-class-tabs"></select>
+          </div>
+          <div class="filter-block">
+            <div class="filter-label">Tanggal</div>
+            <input type="date" class="date-input" id="admin-rekap-harian-tanggal-input">
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-card"><div class="n" id="stat-admin-hadir">–</div><div class="l">Mengerjakan</div></div>
+          <div class="stat-card"><div class="n" id="stat-admin-tidak">–</div><div class="l">Tidak mengerjakan</div></div>
+          <div class="stat-card"><div class="n" id="stat-admin-izin">–</div><div class="l">Izin / sakit</div></div>
+          <div class="stat-card"><div class="n" id="stat-admin-kelas">–</div><div class="l">Kelas ditampilkan</div></div>
+        </div>
+
+        <div class="recap-caption" id="admin-rekap-harian-caption">Pilih kegiatan literasi untuk melihat rekap.</div>
+        <div class="filter-row" style="justify-content:flex-end; margin-top:-6px; margin-bottom:10px;">
+          <button class="pill-btn danger-outline" id="hapus-rekap-tanggal-btn">🗑️ Hapus Rekap Tanggal Ini</button>
+        </div>
+        <table class="recap-table" id="admin-recap-table">
+          <thead>
+            <tr><th>No</th><th>Kelas</th><th>Nama Siswa</th><th>Status</th></tr>
+          </thead>
+          <tbody id="admin-recap-body"></tbody>
+        </table>
+        <div class="edit-hint">Rekap ini menampilkan semua kelas sekaligus secara default — pilih tab kelas di atas untuk melihat satu kelas saja. Untuk menghapus, pilih satu kelas (bukan "Semua Kelas") dan tanggal yang diinginkan, lalu klik "Hapus Rekap Tanggal Ini" — hanya data kelas &amp; tanggal tersebut yang terhapus, bukan seluruh rekap.</div>
+      </div>
+
+      <!-- Rekap Bulanan (semua kelas) -->
+      <div class="rekap-subpanel" id="admin-rekap-bulanan">
+        <div class="filter-row">
+          <div class="filter-block">
+            <div class="filter-label">Kelas</div>
+            <select class="month-picker-select" id="admin-rekap-bulanan-class-tabs"></select>
+          </div>
+          <div class="filter-block">
+            <div class="filter-label">Bulan &amp; Tahun</div>
+            <div class="month-picker">
+              <select id="admin-bulanan-bulan-select">
+                <option>Januari</option><option>Februari</option><option>Maret</option><option>April</option>
+                <option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option>
+                <option selected>September</option><option>Oktober</option><option>November</option><option>Desember</option>
+              </select>
+              <select id="admin-bulanan-tahun-select">
+                <option>2025</option><option selected>2026</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="recap-caption" id="admin-bulanan-caption">Pilih bulan &amp; tahun untuk melihat rekap.</div>
+        <table class="recap-table recap-monthly">
+          <thead>
+            <tr>
+              <th>No</th><th>Kelas</th><th>Nama Siswa</th>
+              <th>Mengerjakan</th><th>Tidak</th><th>Sakit</th><th>Ijin</th><th>Alpha</th><th>Dispen</th>
+            </tr>
+          </thead>
+          <tbody id="admin-bulanan-body"></tbody>
+        </table>
+        <div class="edit-hint">Angka menunjukkan jumlah kemunculan status tiap siswa selama bulan terpilih, digabung dari semua kelas kecuali difilter.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+  import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs';
+  import { jsPDF } from 'https://esm.sh/jspdf@2.5.1';
+  import autoTable from 'https://esm.sh/jspdf-autotable@3.8.2';
+
+  // TODO: ganti dengan Project URL & anon key dari Supabase → Project Settings → API
+  const SUPABASE_URL = 'https://mzmbdqodoycauatcdgre.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Q2mh3YnvsB2A9VlkhVcdkQ_0dYxGGND';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Bungkus semua tabel rekap dengan div yang bisa digeser (scroll) horizontal
+  // supaya di layar ponsel yang sempit, tabel dengan banyak kolom tidak merusak
+  // layout — tinggal digeser, bukan dipaksa menyempit.
+  document.querySelectorAll('table.recap-table').forEach(t=>{
+    if(t.parentElement && t.parentElement.classList.contains('table-scroll')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'table-scroll';
+    t.parentNode.insertBefore(wrap, t);
+    wrap.appendChild(t);
+  });
+
+
+  const roleLabels = { siswa: 'Siswa (Petugas)', guru: 'Guru', admin: 'Admin' };
+  const NAMA_KOSONG = "........................................";
+  const bulanIndo = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  const hariIndo = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+
+  function goToLogin(){ window.location.href = 'index.html'; }
+  function fmtTanggalIndo(iso){
+    const d = new Date(iso + 'T00:00:00');
+    return `${d.getDate()} ${bulanIndo[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  function todayIso(){
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+  }
+
+  // ------------------------------------------------------------------
+  // Current user / auth guard
+  // ------------------------------------------------------------------
+  let currentUser = null; // {id, full_name, role, kelas}
+
+  async function initAuthGuard(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){ goToLogin(); return false; }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('full_name, role, kelas')
+      .eq('id', session.user.id)
+      .single();
+
+    if(error || !profile){
+      console.error('Gagal memuat profil:', error);
+      goToLogin();
+      return false;
+    }
+
+    currentUser = { id: session.user.id, email: session.user.email, ...profile };
+
+    document.getElementById('user-name').textContent = profile.full_name || session.user.email;
+    document.getElementById('user-role-label').textContent = roleLabels[profile.role] || profile.role;
+    document.getElementById('user-avatar').textContent = (profile.full_name || session.user.email || '?').trim().charAt(0).toUpperCase();
+
+    const roleTabs = document.getElementById('role-tabs');
+    const roleNote = document.getElementById('role-note');
+    if(roleTabs) roleTabs.style.display = 'none';
+    if(roleNote) roleNote.style.display = 'none';
+
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    const activePanel = document.getElementById('panel-' + profile.role);
+    if(activePanel) activePanel.classList.add('active');
+
+    const now = new Date();
+    document.getElementById('today-date').textContent = `${hariIndo[now.getDay()]}, ${now.getDate()} ${bulanIndo[now.getMonth()]} ${now.getFullYear()}`;
+
+    return true;
+  }
+
+  document.getElementById('logout-btn').addEventListener('click', async ()=>{
+    await supabase.auth.signOut();
+    goToLogin();
+  });
+
+  // Helper: panggil Edge Function manage-user (perlu deploy dulu, lihat SETUP.md)
+  async function callManageUser(action, payload){
+    const { data, error } = await supabase.functions.invoke('manage-user', {
+      body: { action, payload },
+    });
+    if(error){
+      let msg = error.message || 'Gagal memanggil fungsi.';
+      try {
+        const ctx = await error.context?.json?.();
+        if(ctx?.error) msg = ctx.error;
+      } catch(_e){}
+      throw new Error(msg);
+    }
+    if(data?.error) throw new Error(data.error);
+    return data;
+  }
+
+  // ------------------------------------------------------------------
+  // Data global (dimuat dari Supabase)
+  // ------------------------------------------------------------------
+  let profilesData = [];   // semua baris public.profiles yang boleh dibaca akun ini
+  let kelasData = [];      // public.kelas
+  let kegiatanData = [];   // public.kegiatan
+  let ceklisCache = {};    // key `${kegiatan_id}|${kelas}` -> rows
+
+  async function loadProfiles(){
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: true });
+    if(error){ console.error(error); profilesData = []; return; }
+    profilesData = data || [];
+  }
+  async function loadKelas(){
+    const { data, error } = await supabase.from('kelas').select('*, wali:wali_guru_id(full_name)').order('nama');
+    if(error){ console.error(error); kelasData = []; return; }
+    kelasData = data || [];
+  }
+  async function loadKegiatan(){
+    const { data, error } = await supabase.from('kegiatan').select('*').order('created_at', { ascending: false });
+    if(error){ console.error(error); kegiatanData = []; return; }
+    kegiatanData = data || [];
+  }
+  async function loadCeklis(kegiatanId, kelas){
+    if(!kegiatanId || !kelas) return [];
+    const key = `${kegiatanId}|${kelas}`;
+    const { data, error } = await supabase.from('ceklis')
+      .select('*, siswa:siswa_id(full_name)')
+      .eq('kegiatan_id', kegiatanId).eq('kelas', kelas);
+    if(error){ console.error(error); return []; }
+    ceklisCache[key] = data || [];
+    return ceklisCache[key];
+  }
+
+  // ------------------------------------------------------------------
+  // Tanda tangan / dropdown guru (siapa yang bertugas menandatangani)
+  // ------------------------------------------------------------------
+  const TTD_SUFFIXES = ['siswa', 'harian', 'bulanan'];
+  const TTD_PERAN = ['kepsek', 'guru'];   // dropdown Kepala Sekolah & Guru Literasi, keduanya diisi dari daftar guru
+  const tanggalOtomatis = fmtTanggalIndo(todayIso());
+  const NIP_KOSONG = "..............................";
+  let guruListCache = [];   // {id, full_name, nip} — daftar guru untuk kedua dropdown ttd
+
+  function formatNip(nip){
+    return nip ? `NIP. ${nip}` : `NIP. ${NIP_KOSONG}`;
+  }
+
+  function buildSignatureBlock(suffix){
+    return `
+      <div class="sig-col">
+        <div class="sig-line1">Mengetahui,</div>
+        <div class="sig-role">Kepala Sekolah,</div>
+        <div class="sig-space"></div>
+        <div class="sig-name" id="sig-name-kepsek-${suffix}">${NAMA_KOSONG}</div>
+        <div class="sig-nip" id="sig-nip-kepsek-${suffix}">${formatNip('')}</div>
+      </div>
+      <div class="sig-col">
+        <div class="sig-line1">Sumpiuh, ${tanggalOtomatis}</div>
+        <div class="sig-role">Guru Literasi,</div>
+        <div class="sig-space"></div>
+        <div class="sig-name" id="sig-name-guru-${suffix}">${NAMA_KOSONG}</div>
+        <div class="sig-nip" id="sig-nip-guru-${suffix}">${formatNip('')}</div>
+      </div>`;
+  }
+  document.getElementById('sig-siswa').innerHTML = buildSignatureBlock('siswa');
+  document.getElementById('sig-harian').innerHTML = buildSignatureBlock('harian');
+  document.getElementById('sig-bulanan').innerHTML = buildSignatureBlock('bulanan');
+
+  function refreshTtdGuruSelects(){
+    guruListCache = profilesData.filter(u=>u.role==='guru').map(u=>({ id: u.id, full_name: u.full_name, nip: u.nip || '' }));
+    const optionsHtml = '<option value="">— Pilih guru —</option>' +
+      guruListCache.map(u=>`<option value="${u.id}">${u.full_name}</option>`).join('');
+    TTD_SUFFIXES.forEach(suf=>{
+      TTD_PERAN.forEach(peran=>{
+        const sel = document.getElementById('ttd-'+peran+'-'+suf);
+        if(!sel) return;
+        const prevValue = sel.value;
+        sel.innerHTML = optionsHtml;
+        if(guruListCache.some(u=>u.id===prevValue)) sel.value = prevValue;
+        // pastikan tanda tangan yang ditampilkan tetap sinkron kalau data guru berubah (mis. NIP diedit)
+        const chosen = guruListCache.find(u=>u.id===sel.value);
+        const nameSpan = document.getElementById('sig-name-'+peran+'-'+suf);
+        const nipSpan = document.getElementById('sig-nip-'+peran+'-'+suf);
+        if(nameSpan) nameSpan.textContent = chosen ? chosen.full_name : NAMA_KOSONG;
+        if(nipSpan) nipSpan.textContent = formatNip(chosen ? chosen.nip : '');
+      });
+    });
+  }
+  TTD_SUFFIXES.forEach(suf=>{
+    TTD_PERAN.forEach(peran=>{
+      const sel = document.getElementById('ttd-'+peran+'-'+suf);
+      if(!sel) return;
+      sel.addEventListener('change', ()=>{
+        const chosen = guruListCache.find(u=>u.id===sel.value);
+        const nameSpan = document.getElementById('sig-name-'+peran+'-'+suf);
+        const nipSpan = document.getElementById('sig-nip-'+peran+'-'+suf);
+        if(nameSpan) nameSpan.textContent = chosen ? chosen.full_name : NAMA_KOSONG;
+        if(nipSpan) nipSpan.textContent = formatNip(chosen ? chosen.nip : '');
+      });
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Role tabs (dev-only fallback, biasanya disembunyikan oleh auth guard)
+  // ------------------------------------------------------------------
+  document.querySelectorAll('.role-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.role-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-'+tab.dataset.role).classList.add('active');
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // ADMIN: Pengguna
+  // ------------------------------------------------------------------
+  const userBody = document.getElementById('user-body');
+  let selectedUserIds = new Set();
+
+  function updateDeleteSelectedBtn(){
+    const btn = document.getElementById('delete-selected-btn');
+    btn.textContent = `Hapus Terpilih (${selectedUserIds.size})`;
+    btn.disabled = selectedUserIds.size === 0;
+  }
+
+  function refreshUserFilterKelasSelect(){
+    const sel = document.getElementById('user-filter-kelas');
+    if(!sel) return;
+    const current = sel.value;
+    const namaKelas = kelasData.map(k=>k.nama).sort((a,b)=>a.localeCompare(b));
+    sel.innerHTML = '<option value="">Semua Kelas</option>' +
+      namaKelas.map(n=>`<option value="${n}">${n}</option>`).join('');
+    // pertahankan pilihan filter kalau kelasnya masih ada
+    if(namaKelas.includes(current)) sel.value = current;
+  }
+
+  function getFilteredUsers(){
+    const role = document.getElementById('user-filter-role')?.value || '';
+    const kelas = document.getElementById('user-filter-kelas')?.value || '';
+    return profilesData.filter(u=>{
+      if(role && u.role !== role) return false;
+      if(kelas && u.kelas !== kelas) return false;
+      return true;
+    });
+  }
+
+  function statusLabelUser(u){
+    if(u.role !== 'siswa') return '—';
+    return u.jabatan === 'petugas' ? 'Petugas ceklis' : 'Siswa biasa';
+  }
+
+  function esc(s){
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+
+  function userViewRowHtml(u){
+    const isSelf = currentUser?.id === u.id;
+    return `<td class="checkbox-col"><input type="checkbox" class="user-row-checkbox" data-id="${u.id}" ${isSelf ? 'disabled title="Tidak bisa menghapus akun sendiri"' : ''}></td>
+      <td>${esc(u.full_name)}</td><td><span class="role-tag ${u.role}">${u.role}</span></td><td>${u.nip || "—"}</td><td>${u.kelas || "—"}</td>
+      <td>${statusLabelUser(u)}</td>
+      <td class="row-actions"><button class="link-btn" data-edit="${u.id}">Edit</button><button class="link-btn" data-pw="${u.id}">Ganti Sandi</button><button class="link-btn danger" data-del="${u.id}">Hapus</button></td>`;
+  }
+
+  function kelasOptionsHtml(selected){
+    return '<option value="">— Tanpa Kelas —</option>' +
+      kelasData.map(k=>`<option value="${esc(k.nama)}" ${k.nama===selected?'selected':''}>${esc(k.nama)}</option>`).join('');
+  }
+
+  function enterUserEditMode(tr, u){
+    tr.innerHTML = `
+      <td class="checkbox-col"></td>
+      <td><input type="text" class="edit-input edit-nama" value="${esc(u.full_name)}"></td>
+      <td>
+        <select class="edit-input edit-peran">
+          <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+          <option value="guru" ${u.role==='guru'?'selected':''}>Guru</option>
+          <option value="siswa" ${u.role==='siswa'?'selected':''}>Siswa</option>
+        </select>
+      </td>
+      <td><input type="text" class="edit-input edit-nip" placeholder="NIP/NISN" value="${esc(u.nip || '')}"></td>
+      <td><select class="edit-input edit-kelas" ${u.role==='siswa' ? '' : 'disabled'}>${kelasOptionsHtml(u.kelas)}</select></td>
+      <td>
+        <select class="edit-input edit-jabatan" ${u.role==='siswa' ? '' : 'disabled'}>
+          <option value="biasa" ${u.jabatan!=='petugas'?'selected':''}>Siswa biasa</option>
+          <option value="petugas" ${u.jabatan==='petugas'?'selected':''}>Petugas ceklis</option>
+        </select>
+      </td>
+      <td class="row-actions">
+        <button class="link-btn" data-save="${u.id}">Simpan</button>
+        <button class="link-btn" data-cancel="${u.id}">Batal</button>
+      </td>`;
+
+    const peranSelect = tr.querySelector('.edit-peran');
+    const kelasSelect = tr.querySelector('.edit-kelas');
+    const jabatanSelect = tr.querySelector('.edit-jabatan');
+
+    peranSelect.addEventListener('change', ()=>{
+      const isSiswa = peranSelect.value === 'siswa';
+      kelasSelect.disabled = !isSiswa;
+      jabatanSelect.disabled = !isSiswa;
+      if(!isSiswa){ kelasSelect.value = ''; jabatanSelect.value = 'biasa'; }
+    });
+
+    tr.querySelector('[data-cancel]').addEventListener('click', ()=>{
+      renderUserTable();
+    });
+
+    tr.querySelector('[data-save]').addEventListener('click', async ()=>{
+      const nama = tr.querySelector('.edit-nama').value.trim();
+      if(!nama){ alert('Nama tidak boleh kosong.'); return; }
+      const role = peranSelect.value;
+      const kelas = role === 'siswa' ? (kelasSelect.value || null) : null;
+      const jabatan = role === 'siswa' ? jabatanSelect.value : null;
+      const nip = tr.querySelector('.edit-nip').value.trim() || null;
+
+      const saveBtn = tr.querySelector('[data-save]');
+      saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan…';
+      try{
+        await callManageUser('update', { id: u.id, full_name: nama, role, kelas, jabatan, nip });
+        await refreshAdminData();
+      }catch(e){
+        alert('Gagal menyimpan: ' + e.message);
+        saveBtn.disabled = false; saveBtn.textContent = 'Simpan';
+      }
+    });
+  }
+
+  function renderUserTable(){
+    selectedUserIds = new Set();
+    const selectAllCb = document.getElementById('user-select-all');
+    if(selectAllCb) selectAllCb.checked = false;
+    userBody.innerHTML = "";
+    const filtered = getFilteredUsers();
+    if(profilesData.length === 0){
+      userBody.innerHTML = '<tr><td colspan="7" class="empty-state">Belum ada pengguna. Tambahkan lewat tombol "+ Tambah Pengguna".</td></tr>';
+      updateDeleteSelectedBtn();
+      return;
+    }
+    if(filtered.length === 0){
+      userBody.innerHTML = '<tr><td colspan="7" class="empty-state">Tidak ada pengguna yang cocok dengan filter ini.</td></tr>';
+      updateDeleteSelectedBtn();
+      return;
+    }
+    filtered.forEach(u=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = userViewRowHtml(u);
+      userBody.appendChild(tr);
+    });
+    userBody.querySelectorAll('.user-row-checkbox').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        if(cb.checked) selectedUserIds.add(cb.dataset.id); else selectedUserIds.delete(cb.dataset.id);
+        updateDeleteSelectedBtn();
+      });
+    });
+    updateDeleteSelectedBtn();
+    userBody.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Hapus akun ini? Tindakan tidak bisa dibatalkan.')) return;
+        try{
+          await callManageUser('delete', { id: btn.dataset.del });
+          await refreshAdminData();
+        }catch(e){ alert('Gagal menghapus: ' + e.message); }
+      });
+    });
+    userBody.querySelectorAll('[data-pw]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const u = profilesData.find(p=>p.id === btn.dataset.pw);
+        if(!u) return;
+        const password = prompt(`Kata sandi baru untuk ${u.full_name} (kosongkan untuk batal):`, '');
+        if(password === null || !password.trim()) return;
+        if(password.trim().length < 6){ alert('Kata sandi minimal 6 karakter. Tidak disimpan.'); return; }
+        try{
+          await callManageUser('update', { id: u.id, password: password.trim() });
+          alert('Kata sandi berhasil diubah.');
+        }catch(e){ alert('Gagal mengubah kata sandi: ' + e.message); }
+      });
+    });
+    userBody.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const u = profilesData.find(p=>p.id === btn.dataset.edit);
+        if(!u) return;
+        const tr = btn.closest('tr');
+        enterUserEditMode(tr, u);
+      });
+    });
+  }
+
+  document.getElementById('user-filter-role').addEventListener('change', renderUserTable);
+  document.getElementById('user-filter-kelas').addEventListener('change', renderUserTable);
+
+  document.getElementById('user-select-all').addEventListener('change', (e)=>{
+    const checked = e.target.checked;
+    userBody.querySelectorAll('.user-row-checkbox:not(:disabled)').forEach(cb=>{
+      cb.checked = checked;
+      if(checked) selectedUserIds.add(cb.dataset.id); else selectedUserIds.delete(cb.dataset.id);
+    });
+    updateDeleteSelectedBtn();
+  });
+
+  document.getElementById('delete-selected-btn').addEventListener('click', async ()=>{
+    if(selectedUserIds.size === 0) return;
+    const ids = Array.from(selectedUserIds);
+    if(!confirm(`Hapus ${ids.length} akun terpilih? Tindakan tidak bisa dibatalkan.`)) return;
+    const btn = document.getElementById('delete-selected-btn');
+    btn.disabled = true; btn.textContent = 'Menghapus…';
+    let sukses = 0, gagal = 0;
+    const pesanGagal = [];
+    for(const id of ids){
+      try{
+        await callManageUser('delete', { id });
+        sukses++;
+      }catch(e){
+        gagal++;
+        pesanGagal.push(e.message);
+      }
+    }
+    await refreshAdminData();
+    alert(`Selesai: ${sukses} akun terhapus.` + (gagal ? ` ${gagal} gagal: ${pesanGagal.join('; ')}` : ''));
+  });
+
+  function refreshWaliSelect(){
+    const waliSelect = document.getElementById('wali-select');
+    const guruList = profilesData.filter(u=>u.role==='guru');
+    waliSelect.innerHTML = guruList.length
+      ? guruList.map(u=>`<option value="${u.id}">${u.full_name}</option>`).join('')
+      : '<option value="">— Belum ada guru —</option>';
+  }
+
+  const kelasUserSelect = document.getElementById('kelas-user-select');
+  function refreshKelasUserSelect(){
+    kelasUserSelect.innerHTML = '<option value="">— Kelas (jika siswa) —</option>' +
+      kelasData.map(k=>`<option>${k.nama}</option>`).join('');
+  }
+
+  document.getElementById('toggle-add').addEventListener('click',()=>{
+    document.getElementById('add-form').classList.toggle('open');
+    document.getElementById('import-form').classList.remove('open');
+  });
+
+  document.getElementById('save-user-btn').addEventListener('click', async ()=>{
+    const nameInput = document.getElementById('nama-user-input');
+    const emailInput = document.getElementById('email-user-input');
+    const passwordInput = document.getElementById('password-user-input');
+    const nipInput = document.getElementById('nip-user-input');
+    const resultBox = document.getElementById('add-user-result');
+    const nama = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const passwordManual = passwordInput.value.trim();
+    const peran = document.getElementById('peran-user-select').value;
+    const kelasPilihan = document.getElementById('kelas-user-select').value;
+    const nip = nipInput.value.trim();
+    if(!nama || !email){ alert('Nama dan email wajib diisi.'); return; }
+    if(passwordManual && passwordManual.length < 6){ alert('Kata sandi minimal 6 karakter.'); return; }
+
+    const btn = document.getElementById('save-user-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    try{
+      const res = await callManageUser('create', {
+        email, full_name: nama, role: peran,
+        kelas: peran === 'siswa' ? (kelasPilihan || null) : null,
+        nip: nip || null,
+        password: passwordManual || undefined,
+      });
+      resultBox.style.display = 'block';
+      resultBox.textContent = res.generated_password
+        ? `Akun dibuat. Kata sandi sementara: ${res.generated_password} (sampaikan ke pengguna, minta diganti setelah masuk pertama kali).`
+        : `Akun dibuat dengan kata sandi yang Anda tentukan.`;
+      await refreshAdminData();
+      nameInput.value = ""; emailInput.value = ""; passwordInput.value = ""; nipInput.value = "";
+      document.getElementById('add-form').classList.remove('open');
+    }catch(e){
+      alert('Gagal membuat akun: ' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = 'Simpan';
+    }
+  });
+
+  // ------------------------------------------------------------------
+  // ADMIN & GURU: Impor pengguna secara masal dari file Excel (.xlsx)
+  // Format file: sel biasa (tanpa cell yang digabung), baris 1 = header.
+  // ------------------------------------------------------------------
+  function buatWorkbookSel(sheets){
+    // sheets: [{ nama, rows: array-of-array, lebarKolom: [w,...] }, ...]
+    // Dibangun dengan aoa_to_sheet, jadi tiap nilai selalu 1 sel — tidak ada
+    // merged cell sama sekali (Excel asli, .xlsx murni lewat SheetJS).
+    const wb = XLSX.utils.book_new();
+    sheets.forEach(s=>{
+      const ws = XLSX.utils.aoa_to_sheet(s.rows);
+      if(s.lebarKolom) ws['!cols'] = s.lebarKolom.map(w=>({ wch: w }));
+      XLSX.utils.book_append_sheet(wb, ws, s.nama);
+    });
+    return wb;
+  }
+
+  async function bacaFileExcel(file){
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    // header:1 -> array-of-array mentah, 1 baris = 1 array, 1 sel = 1 nilai
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false });
+    return rows.slice(1); // buang baris judul kolom
+  }
+
+  function selTeks(v){ return String(v ?? '').trim(); }
+
+  function baris(baris, nama, email, statusHtml){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${baris}</td><td>${nama || '—'}</td><td>${email || '—'}</td><td>${statusHtml}</td>`;
+    return tr;
+  }
+
+  // ---- Template & impor untuk Admin (semua peran) ----
+  document.getElementById('download-template-btn').addEventListener('click', ()=>{
+    const header = ['No','Nama Lengkap','Email','Kata Sandi (opsional)','Peran (admin/guru/siswa)','Kelas (khusus siswa)','NIP atau NISN (opsional)','Jabatan (khusus siswa: biasa/petugas)'];
+    const contoh = [
+      [1,'Contoh Nama Guru','guru.contoh@sekolah.sch.id','','guru','','198001012005011001',''],
+      [2,'Contoh Nama Siswa','siswa.contoh@sekolah.sch.id','','siswa','7A','0091234567','biasa'],
+    ];
+    const petunjuk = [
+      ['Kolom','Keterangan'],
+      ['Nama Lengkap','Wajib diisi.'],
+      ['Email','Wajib diisi dan harus unik (belum dipakai akun lain).'],
+      ['Kata Sandi (opsional)','Kosongkan agar dibuatkan kata sandi acak otomatis. Jika diisi sendiri, minimal 6 karakter.'],
+      ['Peran (admin/guru/siswa)','Wajib diisi salah satu: admin, guru, atau siswa (huruf besar/kecil bebas).'],
+      ['Kelas (khusus siswa)','Isi persis sama dengan nama kelas di menu Admin → Kelas. Hanya dipakai jika Peran = siswa.'],
+      ['NIP atau NISN (opsional)','Boleh dikosongkan.'],
+      ['Jabatan (khusus siswa: biasa/petugas)','Isi "petugas" untuk siswa yang bertugas mengisi ceklis harian kelasnya. Kosongkan atau isi "biasa" untuk siswa biasa.'],
+      ['Kolom "No"','Hanya nomor urut untuk memudahkan Anda, tidak dibaca oleh sistem.'],
+      ['Catatan format','Jangan menggabung (merge) sel apa pun. Satu sel hanya berisi satu data, dan baris pertama harus tetap menjadi baris judul kolom.'],
+    ];
+    const wb = buatWorkbookSel([
+      { nama: 'Data Pengguna', rows: [header, ...contoh], lebarKolom: [5,24,28,20,22,16,22,26] },
+      { nama: 'Petunjuk', rows: petunjuk, lebarKolom: [26,72] },
+    ]);
+    XLSX.writeFile(wb, 'template_tambah_pengguna_masal.xlsx');
+  });
+
+  document.getElementById('toggle-import').addEventListener('click',()=>{
+    document.getElementById('import-form').classList.toggle('open');
+    document.getElementById('add-form').classList.remove('open');
+  });
+  document.getElementById('import-cancel-btn').addEventListener('click',()=>{
+    document.getElementById('import-form').classList.remove('open');
+    document.getElementById('import-file-input').value = '';
+  });
+
+  document.getElementById('import-run-btn').addEventListener('click', async ()=>{
+    const fileInput = document.getElementById('import-file-input');
+    const file = fileInput.files[0];
+    if(!file){ alert('Pilih file Excel (.xlsx) hasil isian template terlebih dahulu.'); return; }
+
+    const btn = document.getElementById('import-run-btn');
+    const resultWrap = document.getElementById('import-result-wrap');
+    const resultBody = document.getElementById('import-result-body');
+    const summaryEl = document.getElementById('import-summary');
+    resultBody.innerHTML = '';
+    resultWrap.style.display = 'block';
+    summaryEl.textContent = 'Membaca file…';
+    btn.disabled = true; btn.textContent = 'Memproses…';
+
+    let rows;
+    try{
+      rows = await bacaFileExcel(file);
+    }catch(e){
+      summaryEl.textContent = 'Gagal membaca file Excel: ' + e.message;
+      btn.disabled = false; btn.textContent = 'Impor';
+      return;
+    }
+
+    const validRoles = ['admin','guru','siswa'];
+    let sukses = 0, gagal = 0;
+    const passwordOtomatis = [];
+
+    for(let i = 0; i < rows.length; i++){
+      const r = rows[i];
+      const noBaris = i + 2; // baris ke-berapa di file Excel (1 = judul)
+      const nama = selTeks(r[1]);
+      const email = selTeks(r[2]);
+      const passwordManual = selTeks(r[3]);
+      const peran = selTeks(r[4]).toLowerCase();
+      const kelas = selTeks(r[5]);
+      const nip = selTeks(r[6]);
+      const jabatan = selTeks(r[7]).toLowerCase() === 'petugas' ? 'petugas' : 'biasa';
+
+      if(!nama && !email && !peran) continue; // lewati baris kosong
+
+      if(!nama || !email || !validRoles.includes(peran)){
+        gagal++;
+        resultBody.appendChild(baris(noBaris, nama, email,
+          `<span class="role-tag err">Dilewati</span><span class="msg">Nama/email wajib diisi dan peran harus admin/guru/siswa.</span>`));
+        continue;
+      }
+      if(passwordManual && passwordManual.length < 6){
+        gagal++;
+        resultBody.appendChild(baris(noBaris, nama, email,
+          `<span class="role-tag err">Dilewati</span><span class="msg">Kata sandi kurang dari 6 karakter.</span>`));
+        continue;
+      }
+
+      try{
+        const res = await callManageUser('create', {
+          email, full_name: nama, role: peran,
+          kelas: peran === 'siswa' ? (kelas || null) : null,
+          nip: nip || null,
+          jabatan: peran === 'siswa' ? jabatan : undefined,
+          password: passwordManual || undefined,
+        });
+        sukses++;
+        if(res.generated_password) passwordOtomatis.push(`${nama} (${email}): ${res.generated_password}`);
+        resultBody.appendChild(baris(noBaris, nama, email, `<span class="role-tag ok">Berhasil</span>`));
+      }catch(e){
+        gagal++;
+        resultBody.appendChild(baris(noBaris, nama, email, `<span class="role-tag err">Gagal</span><span class="msg">${e.message}</span>`));
+      }
+    }
+
+    summaryEl.textContent = `Selesai: ${sukses} akun berhasil dibuat, ${gagal} baris gagal/dilewati.` +
+      (passwordOtomatis.length ? ' Kata sandi otomatis (sampaikan ke masing-masing pengguna): ' + passwordOtomatis.join('; ') : '');
+
+    await refreshAdminData();
+    fileInput.value = '';
+    btn.disabled = false; btn.textContent = 'Impor';
+  });
+
+  // ------------------------------------------------------------------
+  // ADMIN: Kelas
+  // ------------------------------------------------------------------
+  const kelasBody = document.getElementById('kelas-body');
+  function renderKelasTable(){
+    kelasBody.innerHTML = "";
+    if(kelasData.length === 0){
+      kelasBody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada kelas. Tambahkan lewat tombol "+ Tambah Kelas".</td></tr>';
+      return;
+    }
+    kelasData.forEach(k=>{
+      const jumlahSiswa = profilesData.filter(p=>p.role==='siswa' && p.kelas===k.nama).length;
+      const petugas = profilesData.filter(p=>p.role==='siswa' && p.kelas===k.nama && p.jabatan==='petugas').map(p=>p.full_name);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${k.nama}</td><td>${k.wali?.full_name || "— (belum ada wali)"}</td>
+        <td>${petugas.length ? petugas.join(', ') : "— (belum ada petugas)"}</td><td>${jumlahSiswa}</td>
+        <td class="row-actions"><button class="link-btn" data-edit-kelas="${k.id}">Edit</button><button class="link-btn danger" data-del-kelas="${k.id}">Hapus</button></td>`;
+      kelasBody.appendChild(tr);
+    });
+    kelasBody.querySelectorAll('[data-edit-kelas]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const k = kelasData.find(x=>x.id === btn.dataset.editKelas);
+        if(!k) return;
+
+        const namaInput = prompt('Nama kelas:', k.nama);
+        if(namaInput === null) return;
+        const namaBaru = namaInput.trim();
+        if(!namaBaru){ alert('Nama kelas tidak boleh kosong.'); return; }
+
+        const guruList = profilesData.filter(p=>p.role==='guru');
+        const waliInput = prompt(
+          `Nama wali kelas (harus sama persis dengan salah satu guru terdaftar, kosongkan jika belum ada wali):\nDaftar guru: ${guruList.map(g=>g.full_name).join(', ') || '(belum ada guru)'}`,
+          k.wali?.full_name || ''
+        );
+        if(waliInput === null) return;
+        let waliId = null;
+        if(waliInput.trim()){
+          const guru = guruList.find(g=>g.full_name.trim().toLowerCase() === waliInput.trim().toLowerCase());
+          if(!guru){ alert(`Guru "${waliInput}" tidak ditemukan di daftar Pengguna. Perubahan dibatalkan.`); return; }
+          waliId = guru.id;
+        }
+
+        const tahunInput = prompt('Tahun ajaran (opsional):', k.tahun_ajaran || '');
+        if(tahunInput === null) return;
+
+        const namaLama = k.nama;
+        const { error } = await supabase.from('kelas').update({
+          nama: namaBaru, wali_guru_id: waliId, tahun_ajaran: tahunInput.trim() || null,
+        }).eq('id', k.id);
+        if(error){ alert('Gagal menyimpan perubahan kelas: ' + error.message); return; }
+
+        // Kolom "kelas" di profiles & ceklis menyimpan NAMA kelas (bukan id),
+        // jadi kalau nama kelas diubah, data terkait harus ikut diperbarui
+        // supaya siswa & rekap yang sudah ada tidak "lepas" dari kelasnya.
+        if(namaBaru !== namaLama){
+          const [{ error: errProfiles }, { error: errCeklis }] = await Promise.all([
+            supabase.from('profiles').update({ kelas: namaBaru }).eq('kelas', namaLama),
+            supabase.from('ceklis').update({ kelas: namaBaru }).eq('kelas', namaLama),
+          ]);
+          if(errProfiles || errCeklis){
+            alert('Nama kelas berhasil diubah, tetapi sebagian data siswa/rekap terkait gagal diperbarui: ' +
+              (errProfiles?.message || errCeklis?.message));
+          }
+        }
+        await refreshAdminData();
+      });
+    });
+    kelasBody.querySelectorAll('[data-del-kelas]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Hapus kelas ini?')) return;
+        const { error } = await supabase.from('kelas').delete().eq('id', btn.dataset.delKelas);
+        if(error){ alert('Gagal menghapus kelas: ' + error.message); return; }
+        await refreshAdminData();
+      });
+    });
+  }
+
+  document.getElementById('toggle-add-kelas').addEventListener('click',()=>{
+    document.getElementById('add-form-kelas').classList.toggle('open');
+    document.getElementById('import-form-kelas').classList.remove('open');
+  });
+
+  document.querySelector('#add-form-kelas .pill-btn').addEventListener('click', async ()=>{
+    const inputs = document.querySelectorAll('#add-form-kelas input');
+    const nama = inputs[0].value.trim();
+    const waliId = document.getElementById('wali-select').value || null;
+    const tahun = inputs[1].value.trim();
+    if(!nama) return;
+    const { error } = await supabase.from('kelas').insert({ nama, wali_guru_id: waliId, tahun_ajaran: tahun || null });
+    if(error){ alert('Gagal menyimpan kelas: ' + error.message); return; }
+    await refreshAdminData();
+    inputs[0].value = ""; inputs[1].value = "";
+    document.getElementById('add-form-kelas').classList.remove('open');
+  });
+
+  // ---- Admin: Template & impor massal kelas dari Excel ----
+  document.getElementById('download-template-btn-kelas').addEventListener('click', ()=>{
+    const header = ['No','Nama Kelas','Wali Kelas (nama guru, opsional)','Tahun Ajaran (opsional)'];
+    const contoh = [
+      [1,'7A','Contoh Nama Guru','2025/2026'],
+      [2,'7B','','2025/2026'],
+    ];
+    const petunjuk = [
+      ['Kolom','Keterangan'],
+      ['Nama Kelas','Wajib diisi dan harus unik (belum ada kelas dengan nama yang sama).'],
+      ['Wali Kelas (nama guru, opsional)','Isi persis sama dengan Nama Lengkap guru yang sudah terdaftar di menu Admin → Pengguna (peran guru). Kosongkan jika wali belum ditentukan.'],
+      ['Tahun Ajaran (opsional)','Contoh: 2025/2026.'],
+      ['Kolom "No"','Hanya nomor urut untuk memudahkan Anda, tidak dibaca oleh sistem.'],
+      ['Catatan format','Jangan menggabung (merge) sel apa pun. Satu sel hanya berisi satu data, dan baris pertama harus tetap menjadi baris judul kolom.'],
+    ];
+    const wb = buatWorkbookSel([
+      { nama: 'Data Kelas', rows: [header, ...contoh], lebarKolom: [5,16,28,18] },
+      { nama: 'Petunjuk', rows: petunjuk, lebarKolom: [28,72] },
+    ]);
+    XLSX.writeFile(wb, 'template_tambah_kelas_masal.xlsx');
+  });
+
+  document.getElementById('toggle-import-kelas').addEventListener('click',()=>{
+    document.getElementById('import-form-kelas').classList.toggle('open');
+    document.getElementById('add-form-kelas').classList.remove('open');
+  });
+  document.getElementById('import-cancel-btn-kelas').addEventListener('click',()=>{
+    document.getElementById('import-form-kelas').classList.remove('open');
+    document.getElementById('import-file-input-kelas').value = '';
+  });
+
+  document.getElementById('import-run-btn-kelas').addEventListener('click', async ()=>{
+    const fileInput = document.getElementById('import-file-input-kelas');
+    const file = fileInput.files[0];
+    if(!file){ alert('Pilih file Excel (.xlsx) hasil isian template terlebih dahulu.'); return; }
+
+    const btn = document.getElementById('import-run-btn-kelas');
+    const resultWrap = document.getElementById('import-result-wrap-kelas');
+    const resultBody = document.getElementById('import-result-body-kelas');
+    const summaryEl = document.getElementById('import-summary-kelas');
+    resultBody.innerHTML = '';
+    resultWrap.style.display = 'block';
+    summaryEl.textContent = 'Membaca file…';
+    btn.disabled = true; btn.textContent = 'Memproses…';
+
+    let rows;
+    try{
+      rows = await bacaFileExcel(file);
+    }catch(e){
+      summaryEl.textContent = 'Gagal membaca file Excel: ' + e.message;
+      btn.disabled = false; btn.textContent = 'Impor';
+      return;
+    }
+
+    let sukses = 0, gagal = 0;
+
+    for(let i = 0; i < rows.length; i++){
+      const r = rows[i];
+      const noBaris = i + 2;
+      const nama = selTeks(r[1]);
+      const waliNama = selTeks(r[2]);
+      const tahun = selTeks(r[3]);
+
+      if(!nama && !waliNama && !tahun) continue; // lewati baris kosong
+
+      const tr = document.createElement('tr');
+      if(!nama){
+        gagal++;
+        tr.innerHTML = `<td>${noBaris}</td><td>—</td><td>${waliNama || '—'}</td>
+          <td><span class="role-tag err">Dilewati</span><span class="msg">Nama kelas wajib diisi.</span></td>`;
+        resultBody.appendChild(tr);
+        continue;
+      }
+
+      let waliId = null;
+      let catatanWali = '';
+      if(waliNama){
+        const guru = profilesData.find(p=>p.role==='guru' && p.full_name.trim().toLowerCase() === waliNama.toLowerCase());
+        if(guru) waliId = guru.id;
+        else catatanWali = `Guru wali "${waliNama}" tidak ditemukan di daftar Pengguna, dikosongkan.`;
+      }
+
+      const { error } = await supabase.from('kelas').insert({ nama, wali_guru_id: waliId, tahun_ajaran: tahun || null });
+      if(error){
+        gagal++;
+        tr.innerHTML = `<td>${noBaris}</td><td>${nama}</td><td>${waliNama || '—'}</td>
+          <td><span class="role-tag err">Gagal</span><span class="msg">${error.message}</span></td>`;
+      } else {
+        sukses++;
+        tr.innerHTML = `<td>${noBaris}</td><td>${nama}</td><td>${waliNama || '—'}</td>
+          <td><span class="role-tag ok">Berhasil</span>${catatanWali ? `<span class="msg">${catatanWali}</span>` : ''}</td>`;
+      }
+      resultBody.appendChild(tr);
+    }
+
+    summaryEl.textContent = `Selesai: ${sukses} kelas berhasil dibuat, ${gagal} baris gagal/dilewati.`;
+
+    await refreshAdminData();
+    fileInput.value = '';
+    btn.disabled = false; btn.textContent = 'Impor';
+  });
+
+  // ------------------------------------------------------------------
+  // ADMIN: Kegiatan literasi
+  // ------------------------------------------------------------------
+  const kegiatanAdminBody = document.getElementById('kegiatan-admin-body');
+
+  function fmtJam(t){
+    // Kolom "time" dari Postgres balik sebagai "HH:MM:SS" — tampilkan HH:MM saja.
+    if(!t) return '00:00';
+    return t.slice(0,5);
+  }
+  function kegiatanSudahDibuka(k){
+    const jam = k.jam_mulai ? fmtJam(k.jam_mulai) : '00:00';
+    const bukaAt = new Date(`${k.tanggal_mulai}T${jam}:00`);
+    return new Date() >= bukaAt;
+  }
+
+  function renderKegiatanAdmin(){
+    kegiatanAdminBody.innerHTML = "";
+    if(kegiatanData.length === 0){
+      kegiatanAdminBody.innerHTML = '<tr><td colspan="4" class="empty-state">Belum ada kegiatan literasi.</td></tr>';
+      return;
+    }
+    kegiatanData.forEach(k=>{
+      const statusLabel = k.status === 'aktif' ? 'Aktif' : 'Selesai';
+      const periode = `${fmtTanggalIndo(k.tanggal_mulai)} pukul ${fmtJam(k.jam_mulai)} WIB – ${fmtTanggalIndo(k.tanggal_selesai)}`;
+      const belumBuka = !kegiatanSudahDibuka(k);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${k.judul}</td><td>${periode}${belumBuka ? '<div class="edit-hint" style="margin:2px 0 0;">Belum bisa dibuka petugas — menunggu jadwal di atas.</div>' : ''}</td>
+        <td><span class="k-status ${k.status}">${statusLabel}</span></td>
+        <td class="row-actions">
+          <button class="link-btn" data-edit-k="${k.id}">Edit</button>
+          <button class="link-btn" data-toggle-k="${k.id}" data-status="${k.status}">${k.status==='aktif' ? 'Tandai selesai' : 'Aktifkan lagi'}</button>
+          <button class="link-btn danger" data-del-k="${k.id}">Hapus</button>
+        </td>`;
+      kegiatanAdminBody.appendChild(tr);
+    });
+    kegiatanAdminBody.querySelectorAll('[data-edit-k]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const k = kegiatanData.find(x=>x.id === btn.dataset.editK);
+        if(!k) return;
+
+        const judulInput = prompt('Judul kegiatan:', k.judul);
+        if(judulInput === null) return;
+        const judul = judulInput.trim();
+        if(!judul){ alert('Judul tidak boleh kosong.'); return; }
+
+        const mulaiInput = prompt('Tanggal mulai (format YYYY-MM-DD):', k.tanggal_mulai);
+        if(mulaiInput === null) return;
+        const jamInput = prompt('Jam buka pada tanggal mulai, WIB (format HH:MM) — petugas baru bisa mengisi ceklis setelah jam ini:', fmtJam(k.jam_mulai));
+        if(jamInput === null) return;
+        const selesaiInput = prompt('Tanggal selesai (format YYYY-MM-DD):', k.tanggal_selesai);
+        if(selesaiInput === null) return;
+        const deskripsiInput = prompt('Deskripsi kegiatan (opsional — muncul di halaman ceklis petugas, kosongkan jika tidak perlu):', k.deskripsi || '');
+        if(deskripsiInput === null) return;
+        const mulai = mulaiInput.trim(), jam = jamInput.trim(), selesai = selesaiInput.trim(), deskripsi = deskripsiInput.trim();
+        const formatTanggalOk = /^\d{4}-\d{2}-\d{2}$/.test(mulai) && /^\d{4}-\d{2}-\d{2}$/.test(selesai);
+        const formatJamOk = /^\d{2}:\d{2}$/.test(jam);
+        if(!formatTanggalOk){ alert('Format tanggal harus YYYY-MM-DD, contoh: 2026-09-06.'); return; }
+        if(!formatJamOk){ alert('Format jam harus HH:MM, contoh: 08:00.'); return; }
+        if(selesai < mulai){ alert('Tanggal selesai tidak boleh sebelum tanggal mulai.'); return; }
+
+        const { error } = await supabase.from('kegiatan').update({
+          judul, tanggal_mulai: mulai, jam_mulai: jam + ':00', tanggal_selesai: selesai, deskripsi: deskripsi || null,
+        }).eq('id', k.id);
+        if(error){ alert('Gagal menyimpan perubahan kegiatan: ' + error.message); return; }
+        await refreshAdminData();
+      });
+    });
+    kegiatanAdminBody.querySelectorAll('[data-toggle-k]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const next = btn.dataset.status === 'aktif' ? 'selesai' : 'aktif';
+        const { error } = await supabase.from('kegiatan').update({ status: next }).eq('id', btn.dataset.toggleK);
+        if(error){ alert(error.message); return; }
+        await refreshAdminData();
+      });
+    });
+    kegiatanAdminBody.querySelectorAll('[data-del-k]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Hapus kegiatan ini? Data ceklis terkait akan ikut terhapus.')) return;
+        const { error } = await supabase.from('kegiatan').delete().eq('id', btn.dataset.delK);
+        if(error){ alert(error.message); return; }
+        await refreshAdminData();
+      });
+    });
+  }
+
+  document.getElementById('toggle-add-kegiatan').addEventListener('click',()=>{
+    document.getElementById('add-form-kegiatan').classList.toggle('open');
+  });
+
+  document.querySelector('#add-form-kegiatan .pill-btn').addEventListener('click', async ()=>{
+    const judulInput = document.querySelector('#add-form-kegiatan input[type="text"]');
+    const dateInputs = document.querySelectorAll('#add-form-kegiatan input[type="date"]');
+    const jamInput = document.querySelector('#add-form-kegiatan input[type="time"]');
+    const deskripsiInput = document.querySelector('#add-form-kegiatan textarea');
+    const judul = judulInput.value.trim();
+    if(!judul || !dateInputs[0].value || !dateInputs[1].value) return;
+    if(dateInputs[1].value < dateInputs[0].value){ alert('Tanggal selesai tidak boleh sebelum tanggal mulai.'); return; }
+    const { error } = await supabase.from('kegiatan').insert({
+      judul, tanggal_mulai: dateInputs[0].value, jam_mulai: (jamInput.value || '00:00') + ':00',
+      tanggal_selesai: dateInputs[1].value, status: 'aktif', deskripsi: deskripsiInput.value.trim() || null,
+    });
+    if(error){ alert('Gagal menyimpan kegiatan: ' + error.message); return; }
+    await refreshAdminData();
+    judulInput.value = ""; dateInputs[0].value = ""; dateInputs[1].value = ""; jamInput.value = "00:00"; deskripsiInput.value = "";
+    document.getElementById('add-form-kegiatan').classList.remove('open');
+  });
+
+  document.querySelectorAll('.admin-tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('.admin-tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('admin-'+t.dataset.admin).classList.add('active');
+    });
+  });
+
+  async function refreshAdminData(){
+    await Promise.all([loadProfiles(), loadKelas(), loadKegiatan()]);
+    refreshUserFilterKelasSelect();
+    renderUserTable();
+    refreshWaliSelect();
+    refreshKelasUserSelect();
+    renderKelasTable();
+    renderKegiatanAdmin();
+    refreshTtdGuruSelects();
+    if(currentUser?.role === 'admin'){
+      updateAdminKegiatanDisplay();
+      renderAdminRekapClassTabs();
+    }
+    if(currentUser?.role === 'guru' || currentUser?.role === 'siswa'){
+      renderKegiatanList();
+      updateGuruKegiatanDisplay();
+      renderAllClassTabsGuru();
+    }
+    if(currentUser?.role === 'guru'){
+      // Muat ulang tabel "Kelola Siswa" juga — sebelumnya tabel ini tidak
+      // di-refresh setelah tambah/edit/hapus (termasuk hapus terpilih lewat
+      // checkbox), sehingga baris yang sudah dihapus masih tampak di layar
+      // dan mencoba menghapusnya lagi akan gagal ("Pengguna tidak ditemukan").
+      renderSiswaKelola(siswaKelolaKelasAktif);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // SISWA: pengumuman kegiatan + ceklis
+  // ------------------------------------------------------------------
+  const kegiatanListEl = document.getElementById('kegiatan-list');
+  const siswaList = document.getElementById('siswa-list');
+  const siswaDetail = document.getElementById('siswa-detail');
+  const detailJudul = document.getElementById('detail-judul');
+  const detailPeriode = document.getElementById('detail-periode');
+  const detailDeskripsi = document.getElementById('detail-deskripsi');
+  let siswaActiveKegiatan = null;
+  let siswaSelectedTanggal = todayIso();
+
+  function renderKegiatanList(){
+    kegiatanListEl.innerHTML = "";
+    const aktif = kegiatanData;
+    if(aktif.length === 0){
+      kegiatanListEl.innerHTML = '<div class="empty-state">Belum ada kegiatan literasi. Admin bisa menambahkannya lewat tab Admin → Kegiatan.</div>';
+      return;
+    }
+    aktif.forEach(k=>{
+      const periode = `${fmtTanggalIndo(k.tanggal_mulai)} – ${fmtTanggalIndo(k.tanggal_selesai)}`;
+      const terkunci = !kegiatanSudahDibuka(k);
+      const card = document.createElement('div');
+      card.className = 'kegiatan-card' + (k.status==='selesai' ? ' done' : '') + (terkunci ? ' locked' : '');
+      const statusHtml = terkunci
+        ? `<span class="k-status locked">🔒 Terbuka ${fmtTanggalIndo(k.tanggal_mulai)} pukul ${fmtJam(k.jam_mulai)} WIB</span>`
+        : `<span class="k-status ${k.status}">${k.status==='aktif' ? 'Aktif' : 'Selesai'}</span>`;
+      card.innerHTML = `
+        <div>
+          <div class="k-title">${k.judul}</div>
+          <div class="k-period">${periode}</div>
+        </div>
+        ${statusHtml}`;
+      card.addEventListener('click', async ()=>{
+        if(terkunci){
+          alert(`Kegiatan ini belum bisa dibuka. Kegiatan akan terbuka pada ${fmtTanggalIndo(k.tanggal_mulai)} pukul ${fmtJam(k.jam_mulai)} WIB.`);
+          return;
+        }
+        siswaActiveKegiatan = k;
+        detailJudul.textContent = k.judul;
+        detailPeriode.textContent = `Periode kegiatan: ${periode} — tandai status tiap teman sekelas untuk tanggal mulai kegiatan.`;
+        if(k.deskripsi && k.deskripsi.trim()){
+          detailDeskripsi.textContent = k.deskripsi;
+          detailDeskripsi.style.display = '';
+        } else {
+          detailDeskripsi.textContent = '';
+          detailDeskripsi.style.display = 'none';
+        }
+        siswaList.classList.remove('active');
+        siswaDetail.classList.add('active');
+        document.getElementById('siswa-class-badge').textContent = currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Belum ada data kelas';
+        // Tanggal ceklis mengikuti tanggal mulai kegiatan yang ditentukan
+        // admin — petugas tidak bisa memilih tanggal lain.
+        siswaSelectedTanggal = k.tanggal_mulai;
+        siswaTanggalDisplay.textContent = fmtTanggalIndo(k.tanggal_mulai);
+        await renderRosterSiswa();
+      });
+      kegiatanListEl.appendChild(card);
+    });
+  }
+
+  document.getElementById('back-to-list').addEventListener('click', async ()=>{
+    siswaDetail.classList.remove('active');
+    siswaList.classList.add('active');
+    await loadKegiatan();
+    renderKegiatanList();
+  });
+
+  const rosterEl = document.getElementById('roster-list');
+  const labelMap = {hadir:"Mengerjakan", tidak:"Tidak Mengerjakan", izin:"Izin", sakit:"Sakit", alpha:"Alpha", dispen:"Dispen"};
+  let rosterKelasSiswa = [];
+
+  async function renderRosterSiswa(){
+    rosterEl.innerHTML = "";
+    if(!currentUser.kelas){
+      rosterEl.innerHTML = '<div class="empty-state">Akun Anda belum terhubung ke kelas manapun. Hubungi admin.</div>';
+      return;
+    }
+    rosterKelasSiswa = profilesData.filter(p=>p.role==='siswa' && p.kelas===currentUser.kelas)
+      .sort((a,b)=>a.full_name.localeCompare(b.full_name));
+    if(rosterKelasSiswa.length === 0){
+      rosterEl.innerHTML = '<div class="empty-state">Belum ada data siswa di kelas ini.</div>';
+      return;
+    }
+    const rows = siswaActiveKegiatan ? await loadCeklis(siswaActiveKegiatan.id, currentUser.kelas) : [];
+    const statusBySiswa = {};
+    rows.filter(r=>r.tanggal === siswaSelectedTanggal).forEach(r=>{ statusBySiswa[r.siswa_id] = r.status; });
+
+    rosterKelasSiswa.forEach((s,i)=>{
+      const row = document.createElement('div');
+      row.className = 'roster-row';
+      row.dataset.siswaId = s.id;
+      row.innerHTML = `
+        <span class="num">${i+1}</span>
+        <span class="name">${s.full_name}</span>
+        <span class="print-status"></span>
+        <div class="status-group">
+          <button class="status-btn" data-status="hadir">Mengerjakan</button>
+          <button class="status-btn" data-status="tidak">Tidak Mengerjakan</button>
+          <select class="status-select">
+            <option value="">Izin lainnya…</option>
+            <option value="sakit">Sakit</option>
+            <option value="ijin">Ijin</option>
+            <option value="alpha">Alpha</option>
+            <option value="dispen">Dispen</option>
+          </select>
+        </div>`;
+      const hadirBtn = row.querySelector('[data-status="hadir"]');
+      const tidakBtn = row.querySelector('[data-status="tidak"]');
+      const sel = row.querySelector('select');
+      const printStatusEl = row.querySelector('.print-status');
+      function setState(state, selVal){
+        hadirBtn.classList.toggle('active', state==='hadir');
+        tidakBtn.classList.toggle('active', state==='tidak');
+        sel.className='status-select'+(selVal?(selVal==='alpha'?' clay':' amber'):'');
+        sel.value = selVal || "";
+        row.dataset.currentStatus = state || selVal || "";
+        printStatusEl.textContent = labelMap[state || selVal] || '—';
+      }
+      const st = statusBySiswa[s.id];
+      if(['sakit','ijin','alpha','dispen'].includes(st)) setState(null, st);
+      else if(st) setState(st, null);
+      hadirBtn.addEventListener('click',()=>setState('hadir',null));
+      tidakBtn.addEventListener('click',()=>setState('tidak',null));
+      sel.addEventListener('change',()=>setState(null, sel.value || null));
+      rosterEl.appendChild(row);
+    });
+    updateSaveBarInfo();
+  }
+
+  function updateSaveBarInfo(){
+    const total = rosterKelasSiswa.length;
+    const marked = document.querySelectorAll('#roster-list .roster-row').length
+      ? [...document.querySelectorAll('#roster-list .roster-row')].filter(r=>r.dataset.currentStatus).length
+      : 0;
+    const infoEl = document.querySelector('#siswa-detail .save-bar .info');
+    if(infoEl) infoEl.textContent = `${marked} dari ${total} siswa sudah ditandai`;
+  }
+  rosterEl.addEventListener('click', updateSaveBarInfo);
+  rosterEl.addEventListener('change', updateSaveBarInfo);
+
+  document.querySelector('#siswa-detail .save-bar-actions .pill-btn.solid').addEventListener('click', async ()=>{
+    if(!siswaActiveKegiatan){ alert('Pilih kegiatan literasi dulu.'); return; }
+    const rows = [...document.querySelectorAll('#roster-list .roster-row')]
+      .filter(r=>r.dataset.currentStatus)
+      .map(r=>({
+        kegiatan_id: siswaActiveKegiatan.id,
+        kelas: currentUser.kelas,
+        siswa_id: r.dataset.siswaId,
+        tanggal: siswaSelectedTanggal,
+        status: r.dataset.currentStatus,
+        dicatat_oleh: currentUser.id,
+      }));
+    if(rows.length === 0){ alert('Belum ada status yang ditandai.'); return; }
+    const { error } = await supabase.from('ceklis').upsert(rows, { onConflict: 'kegiatan_id,siswa_id,tanggal' });
+    if(error){
+      // Kode 23503 = foreign key violation. Ini terjadi kalau kegiatan yang
+      // sedang dibuka ternyata sudah dihapus/diganti di server (data di
+      // daftar kegiatan pada layar ini sudah usang) — bukan gara-gara input
+      // siswa. Muat ulang daftar kegiatan & kembalikan siswa ke daftar,
+      // supaya mereka memilih ulang dari data yang terbaru.
+      if(error.code === '23503'){
+        alert('Kegiatan ini sudah tidak tersedia lagi (mungkin baru saja dihapus/diubah oleh admin/guru). Daftar kegiatan akan dimuat ulang, silakan pilih lagi.');
+        siswaActiveKegiatan = null;
+        await loadKegiatan();
+        renderKegiatanList();
+        siswaDetail.classList.remove('active');
+        siswaList.classList.add('active');
+        return;
+      }
+      alert('Gagal menyimpan ceklis: ' + error.message);
+      return;
+    }
+    alert('Ceklis tersimpan.');
+  });
+
+  // Tanggal ceklis siswa/petugas TIDAK bisa dipilih bebas — selalu mengikuti
+  // tanggal_mulai kegiatan yang sudah ditentukan admin saat membuat kegiatan.
+  const siswaTanggalDisplay = document.getElementById('siswa-tanggal-display');
+
+  // ------------------------------------------------------------------
+  // GURU: kelas tabs bersama (harian / bulanan / kelola siswa)
+  // ------------------------------------------------------------------
+  function renderAllClassTabsGuru(){
+    const namaKelas = kelasData.map(k=>k.nama);
+    const harianWrap = document.getElementById('guru-harian-class-tabs');
+    const bulananWrap = document.getElementById('guru-bulanan-class-tabs');
+    const siswaWrap = document.getElementById('guru-siswa-class-tabs');
+
+    // "Kelola Siswa" hanya menampilkan kelas di mana guru ybs adalah wali
+    const namaKelasWali = currentUser?.role === 'guru'
+      ? kelasData.filter(k=>k.wali_guru_id === currentUser.id).map(k=>k.nama)
+      : namaKelas;
+
+    if(namaKelas.length === 0){
+      harianWrap.innerHTML = '<option value="">Belum ada kelas</option>';
+      bulananWrap.innerHTML = '<option value="">Belum ada kelas</option>';
+      siswaWrap.innerHTML = '<option value="">Belum ada kelas</option>';
+      renderRecap(null); updateGuruHarianCaption(); renderBulanan(null); renderSiswaKelola(null);
+      return;
+    }
+
+    harianWrap.innerHTML = namaKelas.map(n=>`<option value="${n}">${n}</option>`).join('');
+    bulananWrap.innerHTML = namaKelas.map(n=>`<option value="${n}">${n}</option>`).join('');
+    siswaWrap.innerHTML = namaKelasWali.length
+      ? namaKelasWali.map(n=>`<option value="${n}">${n}</option>`).join('')
+      : '<option value="">Anda belum menjadi wali kelas manapun</option>';
+
+    harianWrap.value = namaKelas[0];
+    bulananWrap.value = namaKelas[0];
+    if(namaKelasWali.length) siswaWrap.value = namaKelasWali[0];
+
+    harianWrap.addEventListener('change', async ()=>{
+      await renderRecap(harianWrap.value);
+      updateGuruHarianCaption();
+    });
+    bulananWrap.addEventListener('change', async ()=>{
+      await renderBulanan(bulananWrap.value);
+    });
+    siswaWrap.addEventListener('change', ()=>{
+      renderSiswaKelola(siswaWrap.value || null);
+    });
+
+    renderRecap(namaKelas[0]);
+    updateGuruHarianCaption();
+    renderBulanan(namaKelas[0]);
+    renderSiswaKelola(namaKelasWali[0] || null);
+  }
+
+  // ---- Guru: Rekap Harian ----
+  const recapBody = document.getElementById('recap-body');
+  const recapCaption = document.getElementById('guru-harian-caption');
+  const guruKegiatanJudulEl = document.getElementById('guru-kegiatan-judul');
+  const guruKegiatanDescEl = document.getElementById('guru-kegiatan-desc');
+  const guruKegiatanDisplayEl = document.getElementById('guru-kegiatan-display');
+  let guruActiveKegiatan = null;
+
+  // Cari kegiatan yang periodenya (tanggal_mulai..tanggal_selesai) mencakup
+  // tanggal yang dipilih. Kalau ada beberapa yang tumpang tindih, ambil yang
+  // tanggal_mulai paling baru. Dipakai bersama oleh Guru & Admin supaya
+  // "Kegiatan Literasi" tidak perlu dipilih manual lagi — otomatis
+  // menyesuaikan tanggal.
+  function findKegiatanByTanggal(tanggal){
+    const matches = kegiatanData.filter(k => k.tanggal_mulai <= tanggal && tanggal <= k.tanggal_selesai);
+    if(matches.length === 0) return null;
+    matches.sort((a,b)=> b.tanggal_mulai.localeCompare(a.tanggal_mulai));
+    return matches[0];
+  }
+
+  function updateGuruKegiatanDisplay(){
+    guruActiveKegiatan = findKegiatanByTanggal(currentGuruTanggal());
+    if(guruActiveKegiatan){
+      guruKegiatanJudulEl.textContent = guruActiveKegiatan.judul;
+      if(guruActiveKegiatan.deskripsi && guruActiveKegiatan.deskripsi.trim()){
+        guruKegiatanDescEl.textContent = guruActiveKegiatan.deskripsi;
+        guruKegiatanDescEl.style.display = '';
+      } else {
+        guruKegiatanDescEl.textContent = '';
+        guruKegiatanDescEl.style.display = 'none';
+      }
+      guruKegiatanDisplayEl.classList.remove('empty');
+    } else {
+      guruKegiatanJudulEl.textContent = 'Tidak ada kegiatan pada tanggal ini';
+      guruKegiatanDescEl.textContent = '';
+      guruKegiatanDescEl.style.display = 'none';
+      guruKegiatanDisplayEl.classList.add('empty');
+    }
+  }
+
+  const guruHarianTanggalInput = document.getElementById('guru-harian-tanggal-input');
+  guruHarianTanggalInput.value = todayIso();
+  guruHarianTanggalInput.addEventListener('change', async ()=>{
+    if(!guruHarianTanggalInput.value){ guruHarianTanggalInput.value = todayIso(); return; }
+    updateGuruKegiatanDisplay();
+    const kelasSel = document.getElementById('guru-harian-class-tabs');
+    await renderRecap(kelasSel ? kelasSel.value : null);
+    updateGuruHarianCaption();
+  });
+
+  function currentGuruTanggal(){
+    return guruHarianTanggalInput.value || todayIso();
+  }
+
+  function updateGuruHarianStats(kelas, todaysRows){
+    const elHadir = document.getElementById('stat-guru-hadir');
+    const elTidak = document.getElementById('stat-guru-tidak');
+    const elIzin = document.getElementById('stat-guru-izin');
+    const elPetugas = document.getElementById('stat-guru-petugas');
+    if(!elHadir) return;
+
+    if(!kelas){
+      elHadir.textContent = '–'; elTidak.textContent = '–'; elIzin.textContent = '–';
+      elPetugas.textContent = '–'; elPetugas.title = ''; elPetugas.classList.remove('n-text');
+      return;
+    }
+
+    const hadir = todaysRows.filter(r=>r.status === 'hadir').length;
+    const tidak = todaysRows.filter(r=>r.status === 'tidak').length;
+    const izin = todaysRows.filter(r=>['izin','sakit','alpha','dispen'].includes(r.status)).length;
+    elHadir.textContent = hadir;
+    elTidak.textContent = tidak;
+    elIzin.textContent = izin;
+
+    const petugasList = profilesData.filter(p=>p.role === 'siswa' && p.kelas === kelas && p.jabatan === 'petugas');
+    if(petugasList.length === 0){
+      elPetugas.textContent = '0';
+      elPetugas.title = 'Belum ada siswa yang ditugaskan sebagai petugas ceklis di kelas ini.';
+      elPetugas.classList.remove('n-text');
+    } else if(petugasList.length === 1){
+      elPetugas.textContent = petugasList[0].full_name;
+      elPetugas.title = '';
+      elPetugas.classList.add('n-text');
+    } else {
+      elPetugas.textContent = `${petugasList.length} orang`;
+      elPetugas.title = petugasList.map(p=>p.full_name).join(', ');
+      elPetugas.classList.remove('n-text');
+    }
+  }
+
+  async function renderRecap(kelas){
+    recapBody.innerHTML = "";
+    const kegiatanId = guruActiveKegiatan ? guruActiveKegiatan.id : null;
+    if(!kelas || !kegiatanId){
+      recapBody.innerHTML = kelas
+        ? '<tr><td colspan="3" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>'
+        : '<tr><td colspan="3" class="empty-state">Pilih kelas untuk melihat ceklis.</td></tr>';
+      updateGuruHarianStats(kelas, []);
+      return;
+    }
+    const tanggal = currentGuruTanggal();
+    const rows = await loadCeklis(kegiatanId, kelas);
+    const todays = rows.filter(r=>r.tanggal === tanggal);
+    updateGuruHarianStats(kelas, todays);
+    if(todays.length === 0){
+      recapBody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data ceklis untuk kelas &amp; tanggal ini.</td></tr>';
+      return;
+    }
+    todays.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      const cycleClass = ['sakit','ijin','alpha','dispen'].includes(r.status) ? 'izin' : r.status;
+      tr.innerHTML = `<td>${i+1}</td><td>${r.siswa?.full_name || '—'}</td>
+        <td><span class="badge ${cycleClass}" data-id="${r.id}" data-status="${r.status}">${labelMap[r.status]}</span></td>`;
+      recapBody.appendChild(tr);
+    });
+  }
+
+  const cycle = {hadir:"tidak", tidak:"izin", izin:"hadir", sakit:"hadir", alpha:"hadir", dispen:"hadir"};
+  recapBody.addEventListener('click', async (e)=>{
+    if(!e.target.classList.contains('badge')) return;
+    const id = e.target.dataset.id;
+    const cur = e.target.dataset.status;
+    const next = cycle[cur] || 'hadir';
+    const { error } = await supabase.from('ceklis').update({ status: next }).eq('id', id);
+    if(error){ alert('Gagal memperbarui: ' + error.message); return; }
+    e.target.dataset.status = next;
+    e.target.className = 'badge ' + (['sakit','ijin','alpha','dispen'].includes(next) ? 'izin' : next);
+    e.target.textContent = labelMap[next];
+    const kelasSel = document.getElementById('guru-harian-class-tabs');
+    const kelas = kelasSel ? kelasSel.value : null;
+    const badges = [...recapBody.querySelectorAll('.badge')];
+    updateGuruHarianStats(kelas, badges.map(b=>({ status: b.dataset.status })));
+  });
+
+  function updateGuruHarianCaption(){
+    const kelasSel = document.getElementById('guru-harian-class-tabs');
+    if(!kelasSel || !kelasSel.value){
+      recapCaption.innerHTML = 'Belum ada kelas. Tambahkan kelas lewat tab Admin → Kelas.';
+      return;
+    }
+    const kelas = kelasSel.value;
+    const tanggal = fmtTanggalIndo(currentGuruTanggal());
+    const kegiatanJudul = guruActiveKegiatan ? guruActiveKegiatan.judul : 'Tidak ada kegiatan';
+    recapCaption.innerHTML = `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${tanggal}</strong>`;
+  }
+
+  // ---- Guru: Kelola Siswa ----
+  const siswaKelolaBody = document.getElementById('siswa-kelola-body');
+  let siswaKelolaKelasAktif = null;
+  let selectedSiswaIds = new Set();
+
+  function updateDeleteSelectedSiswaBtn(){
+    const btn = document.getElementById('delete-selected-btn-siswa');
+    btn.textContent = `Hapus Terpilih (${selectedSiswaIds.size})`;
+    btn.disabled = selectedSiswaIds.size === 0;
+  }
+
+  function siswaViewRowHtml(r, i){
+    const label = r.jabatan === 'petugas' ? 'Petugas ceklis' : 'Siswa biasa';
+    const tagClass = r.jabatan === 'petugas' ? 'amber' : 'guru';
+    return `<td class="checkbox-col"><input type="checkbox" class="siswa-row-checkbox" data-id="${r.id}"></td>
+      <td>${i+1}</td><td>${esc(r.full_name)}</td>
+      <td><span class="role-tag ${tagClass}">${label}</span></td>
+      <td class="row-actions"><button class="link-btn" data-edit-s="${r.id}">Edit</button><button class="link-btn" data-pw-s="${r.id}">Ganti Sandi</button><button class="link-btn danger" data-del-s="${r.id}">Hapus</button></td>`;
+  }
+
+  function enterSiswaEditMode(tr, r, i){
+    tr.innerHTML = `
+      <td class="checkbox-col"></td>
+      <td>${i+1}</td>
+      <td><input type="text" class="edit-input edit-siswa-nama" value="${esc(r.full_name)}"></td>
+      <td>
+        <select class="edit-input edit-siswa-jabatan">
+          <option value="biasa" ${r.jabatan!=='petugas'?'selected':''}>Siswa biasa</option>
+          <option value="petugas" ${r.jabatan==='petugas'?'selected':''}>Petugas ceklis</option>
+        </select>
+      </td>
+      <td class="row-actions">
+        <button class="link-btn" data-save-s="${r.id}">Simpan</button>
+        <button class="link-btn" data-cancel-s="${r.id}">Batal</button>
+      </td>`;
+
+    tr.querySelector('[data-cancel-s]').addEventListener('click', ()=>{
+      renderSiswaKelola(siswaKelolaKelasAktif);
+    });
+
+    tr.querySelector('[data-save-s]').addEventListener('click', async ()=>{
+      const nama = tr.querySelector('.edit-siswa-nama').value.trim();
+      if(!nama){ alert('Nama tidak boleh kosong.'); return; }
+      const jabatan = tr.querySelector('.edit-siswa-jabatan').value;
+      const saveBtn = tr.querySelector('[data-save-s]');
+      saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan…';
+      try{
+        await callManageUser('update', { id: r.id, full_name: nama, jabatan });
+        await refreshAdminData();
+      }catch(e){
+        alert('Gagal menyimpan: ' + e.message);
+        saveBtn.disabled = false; saveBtn.textContent = 'Simpan';
+      }
+    });
+  }
+
+  function renderSiswaKelola(kelas){
+    siswaKelolaKelasAktif = kelas;
+    selectedSiswaIds = new Set();
+    const selectAllCb = document.getElementById('siswa-select-all');
+    if(selectAllCb) selectAllCb.checked = false;
+    siswaKelolaBody.innerHTML = "";
+    const rows = kelas ? profilesData.filter(p=>p.role==='siswa' && p.kelas===kelas) : [];
+    if(rows.length === 0){
+      siswaKelolaBody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada siswa di kelas ini.</td></tr>';
+      updateDeleteSelectedSiswaBtn();
+      return;
+    }
+    rows.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = siswaViewRowHtml(r, i);
+      siswaKelolaBody.appendChild(tr);
+    });
+    siswaKelolaBody.querySelectorAll('.siswa-row-checkbox').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        if(cb.checked) selectedSiswaIds.add(cb.dataset.id); else selectedSiswaIds.delete(cb.dataset.id);
+        updateDeleteSelectedSiswaBtn();
+      });
+    });
+    updateDeleteSelectedSiswaBtn();
+    siswaKelolaBody.querySelectorAll('[data-del-s]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Hapus siswa ini?')) return;
+        try{ await callManageUser('delete', { id: btn.dataset.delS }); await refreshAdminData(); }
+        catch(e){ alert('Gagal menghapus: ' + e.message); }
+      });
+    });
+    siswaKelolaBody.querySelectorAll('[data-pw-s]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const s = profilesData.find(p=>p.id===btn.dataset.pwS);
+        if(!s) return;
+        const password = prompt(`Kata sandi baru untuk ${s.full_name} (kosongkan untuk batal):`, '');
+        if(password === null || !password.trim()) return;
+        if(password.trim().length < 6){ alert('Kata sandi minimal 6 karakter. Tidak disimpan.'); return; }
+        try{
+          await callManageUser('update', { id: s.id, password: password.trim() });
+          alert('Kata sandi siswa berhasil diubah.');
+        }catch(e){ alert('Gagal mengubah kata sandi: ' + e.message); }
+      });
+    });
+    siswaKelolaBody.querySelectorAll('[data-edit-s]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const s = profilesData.find(p=>p.id===btn.dataset.editS);
+        if(!s) return;
+        const tr = btn.closest('tr');
+        const i = Array.from(siswaKelolaBody.children).indexOf(tr);
+        enterSiswaEditMode(tr, s, i);
+      });
+    });
+  }
+
+  document.getElementById('siswa-select-all').addEventListener('change', (e)=>{
+    const checked = e.target.checked;
+    siswaKelolaBody.querySelectorAll('.siswa-row-checkbox').forEach(cb=>{
+      cb.checked = checked;
+      if(checked) selectedSiswaIds.add(cb.dataset.id); else selectedSiswaIds.delete(cb.dataset.id);
+    });
+    updateDeleteSelectedSiswaBtn();
+  });
+
+  document.getElementById('delete-selected-btn-siswa').addEventListener('click', async ()=>{
+    if(selectedSiswaIds.size === 0) return;
+    const ids = Array.from(selectedSiswaIds);
+    if(!confirm(`Hapus ${ids.length} siswa terpilih? Tindakan tidak bisa dibatalkan.`)) return;
+    const btn = document.getElementById('delete-selected-btn-siswa');
+    btn.disabled = true; btn.textContent = 'Menghapus…';
+    let sukses = 0, gagal = 0;
+    const pesanGagal = [];
+    for(const id of ids){
+      try{
+        await callManageUser('delete', { id });
+        sukses++;
+      }catch(e){
+        gagal++;
+        pesanGagal.push(e.message);
+      }
+    }
+    await refreshAdminData();
+    alert(`Selesai: ${sukses} siswa terhapus.` + (gagal ? ` ${gagal} gagal: ${pesanGagal.join('; ')}` : ''));
+  });
+
+  document.getElementById('toggle-add-siswa').addEventListener('click',()=>{
+    document.getElementById('add-form-siswa').classList.toggle('open');
+    document.getElementById('import-form-siswa').classList.remove('open');
+  });
+
+  document.getElementById('save-siswa-btn').addEventListener('click', async ()=>{
+    const namaInput = document.getElementById('siswa-nama-input');
+    const emailInput = document.getElementById('siswa-email-input');
+    const passwordInput = document.getElementById('siswa-password-input');
+    const nisnInput = document.getElementById('siswa-nisn-input');
+    const jabatan = document.getElementById('siswa-jabatan-select').value;
+    const resultBox = document.getElementById('add-siswa-result');
+    const nama = namaInput.value.trim();
+    const email = emailInput.value.trim();
+    const passwordManual = passwordInput.value.trim();
+    if(!nama || !email){ alert('Nama dan email wajib diisi.'); return; }
+    if(!siswaKelolaKelasAktif){ alert('Pilih tab kelas Anda dulu.'); return; }
+    if(passwordManual && passwordManual.length < 6){ alert('Kata sandi minimal 6 karakter.'); return; }
+
+    const btn = document.getElementById('save-siswa-btn');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    try{
+      const res = await callManageUser('create', {
+        email, full_name: nama, role: 'siswa', kelas: siswaKelolaKelasAktif,
+        nip: nisnInput.value.trim() || null, jabatan,
+        password: passwordManual || undefined,
+      });
+      resultBox.style.display = 'block';
+      resultBox.textContent = res.generated_password
+        ? `Akun dibuat. Kata sandi sementara: ${res.generated_password}`
+        : `Akun siswa dibuat dengan kata sandi yang Anda tentukan.`;
+      await refreshAdminData();
+      namaInput.value = ""; emailInput.value = ""; passwordInput.value = ""; nisnInput.value = "";
+      document.getElementById('add-form-siswa').classList.remove('open');
+    }catch(e){
+      alert('Gagal membuat akun siswa: ' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = 'Simpan';
+    }
+  });
+
+  // ---- Guru: Template & impor massal siswa dari Excel (kelas = kelas wali aktif) ----
+  document.getElementById('download-template-btn-siswa').addEventListener('click', ()=>{
+    const header = ['No','Nama Lengkap Siswa','Email','Kata Sandi (opsional)','NISN (opsional)','Jabatan (biasa/petugas)'];
+    const contoh = [
+      [1,'Contoh Nama Siswa','siswa.contoh@sekolah.sch.id','','0091234567','biasa'],
+    ];
+    const petunjuk = [
+      ['Kolom','Keterangan'],
+      ['Nama Lengkap Siswa','Wajib diisi.'],
+      ['Email','Wajib diisi dan harus unik (belum dipakai akun lain).'],
+      ['Kata Sandi (opsional)','Kosongkan agar dibuatkan kata sandi acak otomatis. Jika diisi sendiri, minimal 6 karakter.'],
+      ['NISN (opsional)','Boleh dikosongkan.'],
+      ['Jabatan (biasa/petugas)','Isi "petugas" untuk siswa yang bertugas mengisi ceklis harian kelasnya. Kosongkan atau isi "biasa" untuk siswa biasa.'],
+      ['Kelas','Semua siswa di file ini akan dimasukkan ke kelas yang sedang dipilih pada tab "Kelas Anda" saat Anda menekan tombol Impor — pastikan tab kelas yang benar sudah dipilih.'],
+      ['Catatan format','Jangan menggabung (merge) sel apa pun. Satu sel hanya berisi satu data, dan baris pertama harus tetap menjadi baris judul kolom.'],
+    ];
+    const wb = buatWorkbookSel([
+      { nama: 'Data Siswa', rows: [header, ...contoh], lebarKolom: [5,24,28,20,16,20] },
+      { nama: 'Petunjuk', rows: petunjuk, lebarKolom: [22,72] },
+    ]);
+    XLSX.writeFile(wb, 'template_tambah_siswa_masal.xlsx');
+  });
+
+  document.getElementById('toggle-import-siswa').addEventListener('click',()=>{
+    if(!siswaKelolaKelasAktif){ alert('Pilih tab kelas Anda dulu sebelum mengimpor.'); return; }
+    document.getElementById('import-form-siswa').classList.toggle('open');
+    document.getElementById('add-form-siswa').classList.remove('open');
+  });
+  document.getElementById('import-cancel-btn-siswa').addEventListener('click',()=>{
+    document.getElementById('import-form-siswa').classList.remove('open');
+    document.getElementById('import-file-input-siswa').value = '';
+  });
+
+  document.getElementById('import-run-btn-siswa').addEventListener('click', async ()=>{
+    if(!siswaKelolaKelasAktif){ alert('Pilih tab kelas Anda dulu sebelum mengimpor.'); return; }
+    const fileInput = document.getElementById('import-file-input-siswa');
+    const file = fileInput.files[0];
+    if(!file){ alert('Pilih file Excel (.xlsx) hasil isian template terlebih dahulu.'); return; }
+
+    const btn = document.getElementById('import-run-btn-siswa');
+    const resultWrap = document.getElementById('import-result-wrap-siswa');
+    const resultBody = document.getElementById('import-result-body-siswa');
+    const summaryEl = document.getElementById('import-summary-siswa');
+    resultBody.innerHTML = '';
+    resultWrap.style.display = 'block';
+    summaryEl.textContent = `Membaca file untuk kelas ${siswaKelolaKelasAktif}…`;
+    btn.disabled = true; btn.textContent = 'Memproses…';
+
+    let rows;
+    try{
+      rows = await bacaFileExcel(file);
+    }catch(e){
+      summaryEl.textContent = 'Gagal membaca file Excel: ' + e.message;
+      btn.disabled = false; btn.textContent = 'Impor';
+      return;
+    }
+
+    let sukses = 0, gagal = 0;
+    const passwordOtomatis = [];
+    const kelasTujuan = siswaKelolaKelasAktif;
+
+    for(let i = 0; i < rows.length; i++){
+      const r = rows[i];
+      const noBaris = i + 2;
+      const nama = selTeks(r[1]);
+      const email = selTeks(r[2]);
+      const passwordManual = selTeks(r[3]);
+      const nisn = selTeks(r[4]);
+      const jabatan = selTeks(r[5]).toLowerCase() === 'petugas' ? 'petugas' : 'biasa';
+
+      if(!nama && !email) continue; // lewati baris kosong
+
+      if(!nama || !email){
+        gagal++;
+        resultBody.appendChild(baris(noBaris, nama, email,
+          `<span class="role-tag err">Dilewati</span><span class="msg">Nama dan email wajib diisi.</span>`));
+        continue;
+      }
+      if(passwordManual && passwordManual.length < 6){
+        gagal++;
+        resultBody.appendChild(baris(noBaris, nama, email,
+          `<span class="role-tag err">Dilewati</span><span class="msg">Kata sandi kurang dari 6 karakter.</span>`));
+        continue;
+      }
+
+      try{
+        const res = await callManageUser('create', {
+          email, full_name: nama, role: 'siswa', kelas: kelasTujuan,
+          nip: nisn || null, jabatan,
+          password: passwordManual || undefined,
+        });
+        sukses++;
+        if(res.generated_password) passwordOtomatis.push(`${nama} (${email}): ${res.generated_password}`);
+        resultBody.appendChild(baris(noBaris, nama, email, `<span class="role-tag ok">Berhasil</span>`));
+      }catch(e){
+        gagal++;
+        resultBody.appendChild(baris(noBaris, nama, email, `<span class="role-tag err">Gagal</span><span class="msg">${e.message}</span>`));
+      }
+    }
+
+    summaryEl.textContent = `Selesai untuk kelas ${kelasTujuan}: ${sukses} akun berhasil dibuat, ${gagal} baris gagal/dilewati.` +
+      (passwordOtomatis.length ? ' Kata sandi otomatis (sampaikan ke masing-masing siswa): ' + passwordOtomatis.join('; ') : '');
+
+    await refreshAdminData();
+    fileInput.value = '';
+    btn.disabled = false; btn.textContent = 'Impor';
+  });
+
+  // ---- Guru: Rekap Bulanan (agregasi dari tabel ceklis) ----
+  const bulananBody = document.getElementById('bulanan-body');
+  const bulananCaption = document.getElementById('bulanan-caption');
+  const bulanSelect = document.getElementById('bulan-select');
+  const tahunSelect = document.getElementById('tahun-select');
+  const bulanIndexByName = Object.fromEntries(bulanIndo.map((b,i)=>[b,i]));
+
+  async function renderBulanan(kelas){
+    bulananBody.innerHTML = "";
+    if(!kelas){
+      bulananCaption.innerHTML = 'Belum ada kelas. Tambahkan kelas lewat tab Admin → Kelas.';
+      bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
+      return;
+    }
+    const bulan = bulanSelect.value, tahun = parseInt(tahunSelect.value,10);
+    const bulanIdx = bulanIndexByName[bulan];
+    const first = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-01`;
+    const lastDay = new Date(tahun, bulanIdx+1, 0).getDate();
+    const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+    const { data, error } = await supabase.from('ceklis')
+      .select('siswa_id, status, tanggal, siswa:siswa_id(full_name)')
+      .eq('kelas', kelas).gte('tanggal', first).lte('tanggal', last);
+    if(error){ console.error(error); bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Gagal memuat data.</td></tr>'; return; }
+
+    const perSiswa = {};
+    (data || []).forEach(r=>{
+      if(!perSiswa[r.siswa_id]) perSiswa[r.siswa_id] = { nama: r.siswa?.full_name || '—', hadir:0, tidak:0, sakit:0, ijin:0, alpha:0, dispen:0 };
+      if(perSiswa[r.siswa_id][r.status] !== undefined) perSiswa[r.siswa_id][r.status]++;
+    });
+    const rows = Object.values(perSiswa).sort((a,b)=>a.nama.localeCompare(b.nama));
+
+    if(rows.length === 0){
+      bulananCaption.innerHTML = `Belum ada data rekap untuk <strong>Kelas ${kelas}</strong>.`;
+      bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
+      return;
+    }
+    rows.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${r.nama}</td>
+        <td class="count-hadir">${r.hadir}</td><td class="count-tidak">${r.tidak}</td>
+        <td>${r.sakit}</td><td>${r.ijin}</td><td class="count-alpha">${r.alpha}</td><td>${r.dispen}</td>`;
+      bulananBody.appendChild(tr);
+    });
+    bulananCaption.innerHTML = `Rekap <strong>Kelas ${kelas}</strong> — <strong>${bulan} ${tahun}</strong>`;
+  }
+
+  bulanSelect.addEventListener('change', async ()=>{
+    const kelasSel = document.getElementById('guru-bulanan-class-tabs');
+    await renderBulanan(kelasSel ? kelasSel.value : null);
+  });
+  tahunSelect.addEventListener('change', async ()=>{
+    const kelasSel = document.getElementById('guru-bulanan-class-tabs');
+    await renderBulanan(kelasSel ? kelasSel.value : null);
+  });
+
+  // ------------------------------------------------------------------
+  // ADMIN: Rekap Semua Kelas (harian & bulanan) — admin bisa melihat
+  // rekapan gabungan seluruh kelas sekaligus, atau memfilter satu kelas.
+  // ------------------------------------------------------------------
+  const ADMIN_ALL_KELAS = '__semua__';
+
+  const adminRekapTanggalInput = document.getElementById('admin-rekap-harian-tanggal-input');
+  const adminRecapBody = document.getElementById('admin-recap-body');
+  const adminRecapCaption = document.getElementById('admin-rekap-harian-caption');
+  const adminBulananBody = document.getElementById('admin-bulanan-body');
+  const adminBulananCaption = document.getElementById('admin-bulanan-caption');
+  const adminBulanSelect = document.getElementById('admin-bulanan-bulan-select');
+  const adminTahunSelect = document.getElementById('admin-bulanan-tahun-select');
+  const adminKegiatanJudulEl = document.getElementById('admin-kegiatan-judul');
+  const adminKegiatanDescEl = document.getElementById('admin-kegiatan-desc');
+  const adminKegiatanDisplayEl = document.getElementById('admin-kegiatan-display');
+  let adminActiveKegiatan = null;
+
+  function currentAdminHarianTanggal(){
+    return adminRekapTanggalInput.value || todayIso();
+  }
+
+  function updateAdminKegiatanDisplay(){
+    if(!adminKegiatanJudulEl) return;
+    adminActiveKegiatan = findKegiatanByTanggal(currentAdminHarianTanggal());
+    if(adminActiveKegiatan){
+      adminKegiatanJudulEl.textContent = adminActiveKegiatan.judul;
+      if(adminActiveKegiatan.deskripsi && adminActiveKegiatan.deskripsi.trim()){
+        adminKegiatanDescEl.textContent = adminActiveKegiatan.deskripsi;
+        adminKegiatanDescEl.style.display = '';
+      } else {
+        adminKegiatanDescEl.textContent = '';
+        adminKegiatanDescEl.style.display = 'none';
+      }
+      adminKegiatanDisplayEl.classList.remove('empty');
+    } else {
+      adminKegiatanJudulEl.textContent = 'Tidak ada kegiatan pada tanggal ini';
+      adminKegiatanDescEl.textContent = '';
+      adminKegiatanDescEl.style.display = 'none';
+      adminKegiatanDisplayEl.classList.add('empty');
+    }
+  }
+
+  function updateAdminHarianStats(rows){
+    const elHadir = document.getElementById('stat-admin-hadir');
+    const elTidak = document.getElementById('stat-admin-tidak');
+    const elIzin = document.getElementById('stat-admin-izin');
+    const elKelas = document.getElementById('stat-admin-kelas');
+    if(!elHadir) return;
+    if(!rows || rows.length === 0){
+      elHadir.textContent = '0'; elTidak.textContent = '0'; elIzin.textContent = '0'; elKelas.textContent = '0';
+      return;
+    }
+    elHadir.textContent = rows.filter(r=>r.status === 'hadir').length;
+    elTidak.textContent = rows.filter(r=>r.status === 'tidak').length;
+    elIzin.textContent = rows.filter(r=>['izin','sakit','alpha','dispen'].includes(r.status)).length;
+    elKelas.textContent = new Set(rows.map(r=>r.kelas)).size;
+  }
+
+  async function renderAdminRekapHarian(kelasFilter){
+    if(!adminRecapBody) return;
+    adminRecapBody.innerHTML = "";
+    const kegiatanId = adminActiveKegiatan ? adminActiveKegiatan.id : null;
+    const tanggal = currentAdminHarianTanggal();
+    const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : '';
+    const kelasLabel = (!kelasFilter || kelasFilter === ADMIN_ALL_KELAS) ? 'Semua Kelas' : `Kelas ${kelasFilter}`;
+
+    if(!kegiatanId){
+      adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>';
+      adminRecapCaption.innerHTML = 'Tidak ada kegiatan literasi pada tanggal ini.';
+      updateAdminHarianStats([]);
+      return;
+    }
+
+    const { data, error } = await supabase.from('ceklis')
+      .select('*, siswa:siswa_id(full_name)')
+      .eq('kegiatan_id', kegiatanId).eq('tanggal', tanggal);
+    if(error){
+      console.error(error);
+      adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Gagal memuat data.</td></tr>';
+      return;
+    }
+
+    let rows = data || [];
+    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) rows = rows.filter(r=>r.kelas === kelasFilter);
+    rows.sort((a,b)=> (a.kelas||'').localeCompare(b.kelas||'') || (a.siswa?.full_name||'').localeCompare(b.siswa?.full_name||''));
+
+    updateAdminHarianStats(rows);
+    adminRecapCaption.innerHTML = `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>${kelasLabel}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
+
+    if(rows.length === 0){
+      adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Belum ada data ceklis untuk filter ini.</td></tr>';
+      return;
+    }
+    rows.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      const cycleClass = ['sakit','ijin','alpha','dispen'].includes(r.status) ? 'izin' : r.status;
+      tr.innerHTML = `<td>${i+1}</td><td>${r.kelas}</td><td>${r.siswa?.full_name || '—'}</td>
+        <td><span class="badge ${cycleClass}">${labelMap[r.status]}</span></td>`;
+      adminRecapBody.appendChild(tr);
+    });
+  }
+
+  async function renderAdminRekapBulanan(kelasFilter){
+    if(!adminBulananBody) return;
+    adminBulananBody.innerHTML = "";
+    const bulan = adminBulanSelect.value, tahun = parseInt(adminTahunSelect.value, 10);
+    const bulanIdx = bulanIndexByName[bulan];
+    const first = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-01`;
+    const lastDay = new Date(tahun, bulanIdx+1, 0).getDate();
+    const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    const kelasLabel = (!kelasFilter || kelasFilter === ADMIN_ALL_KELAS) ? 'Semua Kelas' : `Kelas ${kelasFilter}`;
+
+    let query = supabase.from('ceklis')
+      .select('siswa_id, kelas, status, tanggal, siswa:siswa_id(full_name)')
+      .gte('tanggal', first).lte('tanggal', last);
+    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
+    const { data, error } = await query;
+    if(error){
+      console.error(error);
+      adminBulananBody.innerHTML = '<tr><td colspan="9" class="empty-state">Gagal memuat data.</td></tr>';
+      return;
+    }
+
+    const perSiswa = {};
+    (data || []).forEach(r=>{
+      if(!perSiswa[r.siswa_id]) perSiswa[r.siswa_id] = { nama: r.siswa?.full_name || '—', kelas: r.kelas || '—', hadir:0, tidak:0, sakit:0, ijin:0, alpha:0, dispen:0 };
+      if(perSiswa[r.siswa_id][r.status] !== undefined) perSiswa[r.siswa_id][r.status]++;
+    });
+    const rows = Object.values(perSiswa).sort((a,b)=> a.kelas.localeCompare(b.kelas) || a.nama.localeCompare(b.nama));
+
+    if(rows.length === 0){
+      adminBulananCaption.innerHTML = `Belum ada data rekap untuk <strong>${kelasLabel}</strong>.`;
+      adminBulananBody.innerHTML = '<tr><td colspan="9" class="empty-state">Belum ada data.</td></tr>';
+      return;
+    }
+    rows.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${r.kelas}</td><td>${r.nama}</td>
+        <td class="count-hadir">${r.hadir}</td><td class="count-tidak">${r.tidak}</td>
+        <td>${r.sakit}</td><td>${r.ijin}</td><td class="count-alpha">${r.alpha}</td><td>${r.dispen}</td>`;
+      adminBulananBody.appendChild(tr);
+    });
+    adminBulananCaption.innerHTML = `Rekap <strong>${kelasLabel}</strong> — <strong>${bulan} ${tahun}</strong>`;
+  }
+
+  function renderAdminRekapClassTabs(){
+    const harianWrap = document.getElementById('admin-rekap-harian-class-tabs');
+    const bulananWrap = document.getElementById('admin-rekap-bulanan-class-tabs');
+    if(!harianWrap || !bulananWrap) return;
+    const namaKelas = kelasData.map(k=>k.nama);
+
+    harianWrap.innerHTML = [`<option value="${ADMIN_ALL_KELAS}">Semua Kelas</option>`]
+      .concat(namaKelas.map(n=>`<option value="${n}">${n}</option>`)).join('');
+    bulananWrap.innerHTML = [`<option value="${ADMIN_ALL_KELAS}">Semua Kelas</option>`]
+      .concat(namaKelas.map(n=>`<option value="${n}">${n}</option>`)).join('');
+    harianWrap.value = ADMIN_ALL_KELAS;
+    bulananWrap.value = ADMIN_ALL_KELAS;
+
+    harianWrap.addEventListener('change', async ()=>{
+      await renderAdminRekapHarian(harianWrap.value);
+    });
+    bulananWrap.addEventListener('change', async ()=>{
+      await renderAdminRekapBulanan(bulananWrap.value);
+    });
+
+    renderAdminRekapHarian(ADMIN_ALL_KELAS);
+    renderAdminRekapBulanan(ADMIN_ALL_KELAS);
+  }
+
+  // ---- Admin: Hapus SEMUA data rekap (seluruh kelas, seluruh kegiatan) ----
+  const hapusSemuaRekapBtn = document.getElementById('hapus-semua-rekap-btn');
+  if(hapusSemuaRekapBtn){
+    hapusSemuaRekapBtn.addEventListener('click', async ()=>{
+      if(!confirm(
+        'PERINGATAN: tombol ini akan menghapus SEMUA data rekap ceklis dari SEMUA kelas dan SEMUA kegiatan literasi secara permanen dari database.\n\n' +
+        'Tindakan ini TIDAK BISA dibatalkan. Lanjutkan?'
+      )) return;
+
+      const konfirmasi = prompt('Untuk mengonfirmasi, ketik persis: HAPUS SEMUA');
+      if(konfirmasi === null) return;
+      if(konfirmasi.trim() !== 'HAPUS SEMUA'){
+        alert('Teks konfirmasi tidak sesuai. Penghapusan dibatalkan.');
+        return;
+      }
+
+      hapusSemuaRekapBtn.disabled = true;
+      hapusSemuaRekapBtn.textContent = 'Menghapus…';
+
+      const { error } = await supabase.from('ceklis').delete().not('id', 'is', null);
+
+      hapusSemuaRekapBtn.disabled = false;
+      hapusSemuaRekapBtn.textContent = '🗑️ Hapus Semua Rekap';
+
+      if(error){
+        alert('Gagal menghapus rekap: ' + error.message);
+        return;
+      }
+
+      ceklisCache = {};
+      alert('Semua data rekap ceklis berhasil dihapus.');
+
+      const harianSel = document.getElementById('admin-rekap-harian-class-tabs');
+      const bulananSel = document.getElementById('admin-rekap-bulanan-class-tabs');
+      await renderAdminRekapHarian(harianSel ? harianSel.value : ADMIN_ALL_KELAS);
+      await renderAdminRekapBulanan(bulananSel ? bulananSel.value : ADMIN_ALL_KELAS);
+    });
+  }
+
+  // ---- Admin: Hapus rekap SATU kelas pada SATU tanggal saja ----
+  // Harus pilih kegiatan + satu kelas (bukan "Semua Kelas") + tanggal dulu;
+  // hanya baris ceklis yang cocok ketiganya yang dihapus, tanggal & kelas
+  // lain tidak tersentuh.
+  const hapusRekapTanggalBtn = document.getElementById('hapus-rekap-tanggal-btn');
+  if(hapusRekapTanggalBtn){
+    hapusRekapTanggalBtn.addEventListener('click', async ()=>{
+      const kegiatanId = adminActiveKegiatan ? adminActiveKegiatan.id : null;
+      const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : '';
+      const harianSel = document.getElementById('admin-rekap-harian-class-tabs');
+      const kelasFilter = harianSel ? harianSel.value : null;
+      const tanggal = currentAdminHarianTanggal();
+
+      if(!kegiatanId){ alert('Tidak ada kegiatan literasi pada tanggal ini.'); return; }
+      if(!kelasFilter || kelasFilter === ADMIN_ALL_KELAS){
+        alert('Pilih satu kelas terlebih dahulu (bukan "Semua Kelas") sebelum menghapus rekap.');
+        return;
+      }
+
+      if(!confirm(
+        `Hapus data ceklis Kelas ${kelasFilter} pada kegiatan "${kegiatanJudul}" untuk tanggal ${fmtTanggalIndo(tanggal)}?\n\n` +
+        'Hanya data kelas & tanggal ini yang akan dihapus — rekap tanggal lain dan kelas lain tidak terpengaruh. Tindakan ini tidak bisa dibatalkan.'
+      )) return;
+
+      hapusRekapTanggalBtn.disabled = true;
+      hapusRekapTanggalBtn.textContent = 'Menghapus…';
+
+      const { error } = await supabase.from('ceklis').delete()
+        .eq('kegiatan_id', kegiatanId).eq('kelas', kelasFilter).eq('tanggal', tanggal);
+
+      hapusRekapTanggalBtn.disabled = false;
+      hapusRekapTanggalBtn.textContent = '🗑️ Hapus Rekap Tanggal Ini';
+
+      if(error){
+        alert('Gagal menghapus rekap: ' + error.message);
+        return;
+      }
+
+      delete ceklisCache[`${kegiatanId}|${kelasFilter}`];
+      alert(`Rekap Kelas ${kelasFilter} tanggal ${fmtTanggalIndo(tanggal)} berhasil dihapus.`);
+      await renderAdminRekapHarian(kelasFilter);
+    });
+  }
+
+  if(adminRekapTanggalInput){
+    adminRekapTanggalInput.value = todayIso();
+    adminRekapTanggalInput.addEventListener('change', async ()=>{
+      if(!adminRekapTanggalInput.value){ adminRekapTanggalInput.value = todayIso(); return; }
+      updateAdminKegiatanDisplay();
+      const harianSel = document.getElementById('admin-rekap-harian-class-tabs');
+      await renderAdminRekapHarian(harianSel ? harianSel.value : ADMIN_ALL_KELAS);
+    });
+  }
+  if(adminBulanSelect){
+    adminBulanSelect.addEventListener('change', async ()=>{
+      const bulananSel = document.getElementById('admin-rekap-bulanan-class-tabs');
+      await renderAdminRekapBulanan(bulananSel ? bulananSel.value : ADMIN_ALL_KELAS);
+    });
+  }
+  if(adminTahunSelect){
+    adminTahunSelect.addEventListener('change', async ()=>{
+      const bulananSel = document.getElementById('admin-rekap-bulanan-class-tabs');
+      await renderAdminRekapBulanan(bulananSel ? bulananSel.value : ADMIN_ALL_KELAS);
+    });
+  }
+
+  document.querySelectorAll('.rekap-subtab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.rekap-subtab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.rekap-subpanel').forEach(p=>p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('admin-rekap-'+t.dataset.rekapview).classList.add('active');
+    });
+  });
+
+  // ---- Guru: Harian / Bulanan sub-tabs ----
+  document.querySelectorAll('.guru-subtab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('.guru-subtab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.guru-subpanel').forEach(p=>p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('guru-'+t.dataset.guruview).classList.add('active');
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Unduh PDF — desain sendiri, dijamin muat dalam satu halaman A4
+  // (tidak lagi memakai window.print(), jadi hasilnya konsisten di semua
+  // browser/perangkat dan tidak tergantung dialog cetak sistem operasi.)
+  // ------------------------------------------------------------------
+  const PDF_COVER = [46, 107, 91];       // --cover
+  const PDF_INK = [33, 31, 27];          // --ink
+  const PDF_INK_SOFT = [116, 108, 94];   // --ink-soft
+  const PDF_INK_FAINT = [167, 158, 140]; // --ink-faint
+  const PDF_ROW_SHADE = [246, 243, 236]; // --paper
+
+  function buildA4Pdf({ suffix, docTitle, metaLines, columns, columnStyles, rows, filename }){
+    if(!rows || rows.length === 0){ alert('Tidak ada data untuk diekspor.'); return; }
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginX = 12;
+    const marginBottom = 14;
+
+    // ---- Kop / header band — digambar ulang di tiap halaman ----
+    function drawHeaderBand(){
+      doc.setFillColor(...PDF_COVER);
+      doc.rect(0, 0, pageWidth, 24, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text('LITERASI DAN NUMERASI', marginX, 11);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('SMA NEGERI 1 SUMPIUH', marginX, 17.5);
+      doc.setFontSize(8);
+      doc.text(`Diunduh: ${fmtTanggalIndo(todayIso())}`, pageWidth - marginX, 17.5, { align: 'right' });
+    }
+
+    drawHeaderBand();
+
+    // ---- Judul dokumen ----
+    let y = 32;
+    doc.setTextColor(...PDF_INK);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text(docTitle, marginX, y);
+    y += 6;
+
+    // ---- Baris meta (kelas / kegiatan / tanggal) ----
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...PDF_INK_SOFT);
+    metaLines.forEach(line=>{ doc.text(line, marginX, y); y += 5; });
+    y += 2;
+    doc.setDrawColor(230, 224, 210);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 5;
+    const contentStartY = y;
+
+    // ---- Tabel data. Boleh berlanjut ke halaman berikutnya kalau baris
+    // banyak — kop dicetak ulang otomatis di tiap halaman lewat didDrawPage. ----
+    autoTable(doc, {
+      startY: contentStartY,
+      margin: { left: marginX, right: marginX, top: 28, bottom: marginBottom },
+      head: [columns],
+      body: rows,
+      theme: 'grid',
+      styles: {
+        font: 'helvetica',
+        fontSize: rows.length > 45 ? 8 : 9.5,
+        cellPadding: rows.length > 45 ? 1.6 : 2.4,
+        overflow: 'linebreak',
+        lineColor: PDF_INK,
+        lineWidth: 0.15,
+        textColor: PDF_INK,
+        valign: 'middle',
+      },
+      headStyles: { fillColor: PDF_COVER, textColor: [255,255,255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: PDF_ROW_SHADE },
+      columnStyles,
+      didDrawPage: (data)=>{
+        if(data.pageNumber > 1) drawHeaderBand();
+      },
+    });
+
+    // ---- Blok tanda tangan — menyambung setelah baris terakhir tabel;
+    // pindah ke halaman baru sendiri kalau ruang yang tersisa tidak cukup. ----
+    const signatureBlockHeight = 34;
+    let finalY = doc.lastAutoTable.finalY;
+    if(finalY + signatureBlockHeight + 10 > pageHeight - marginBottom){
+      doc.addPage();
+      drawHeaderBand();
+      finalY = 30;
+    }
+    const sigY = finalY + 14;
+    const colWidth = (pageWidth - marginX * 2) / 2;
+    const leftX = marginX;
+    const rightX = marginX + colWidth;
+
+    const kepsekName = document.getElementById('sig-name-kepsek-' + suffix)?.textContent.trim() || NAMA_KOSONG;
+    const kepsekNip = document.getElementById('sig-nip-kepsek-' + suffix)?.textContent.trim() || formatNip('');
+    const guruName = document.getElementById('sig-name-guru-' + suffix)?.textContent.trim() || NAMA_KOSONG;
+    const guruNip = document.getElementById('sig-nip-guru-' + suffix)?.textContent.trim() || formatNip('');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...PDF_INK_SOFT);
+    doc.text('Mengetahui,', leftX, sigY);
+    doc.text('Kepala Sekolah,', leftX, sigY + 5);
+    doc.text(`Sumpiuh, ${tanggalOtomatis}`, rightX, sigY);
+    doc.text('Guru Literasi,', rightX, sigY + 5);
+
+    const nameY = sigY + 22;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...PDF_INK);
+    doc.text(kepsekName, leftX, nameY);
+    doc.text(guruName, rightX, nameY);
+    doc.setDrawColor(...PDF_INK);
+    doc.setLineWidth(0.2);
+    doc.line(leftX, nameY + 1, leftX + doc.getTextWidth(kepsekName), nameY + 1);
+    doc.line(rightX, nameY + 1, rightX + doc.getTextWidth(guruName), nameY + 1);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...PDF_INK_SOFT);
+    doc.text(kepsekNip, leftX, nameY + 5);
+    doc.text(guruNip, rightX, nameY + 5);
+
+    // ---- Catatan kaki + nomor halaman di semua halaman ----
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++){
+      doc.setPage(i);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...PDF_INK_FAINT);
+      doc.text('Dokumen dibuat otomatis oleh aplikasi LITNUM SMANIS.', marginX, pageHeight - 6);
+      doc.text(`Hal. ${i}/${pageCount}`, pageWidth - marginX, pageHeight - 6, { align: 'right' });
+    }
+
+    doc.save(filename);
+  }
+
+  function domRowsToArray(tbody){
+    return [...tbody.querySelectorAll('tr')]
+      .filter(tr=>!tr.querySelector('.empty-state'))
+      .map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent.trim()));
+  }
+
+  const COLS_ROSTER = ['No', 'Nama Siswa', 'Status'];
+  const COLSTYLE_ROSTER = { 0:{cellWidth:14, halign:'center'}, 1:{cellWidth:127}, 2:{cellWidth:45, halign:'center'} };
+
+  document.getElementById('print-siswa').addEventListener('click', ()=>{
+    if(!siswaActiveKegiatan){ alert('Pilih kegiatan literasi dulu.'); return; }
+    const rowEls = [...document.querySelectorAll('#roster-list .roster-row')];
+    const rows = rowEls.map((r,i)=>[
+      String(i + 1),
+      r.querySelector('.name')?.textContent.trim() || '-',
+      labelMap[r.dataset.currentStatus] || '—',
+    ]);
+    buildA4Pdf({
+      suffix: 'siswa',
+      docTitle: 'Ceklis Kegiatan Literasi Harian',
+      metaLines: [
+        `Kelas: ${currentUser.kelas || '-'}`,
+        `Kegiatan: ${siswaActiveKegiatan.judul}`,
+        `Tanggal: ${fmtTanggalIndo(siswaSelectedTanggal)}`,
+      ],
+      columns: COLS_ROSTER,
+      columnStyles: COLSTYLE_ROSTER,
+      rows,
+      filename: `ceklis-${currentUser.kelas || 'kelas'}-${siswaSelectedTanggal}.pdf`,
+    });
+  });
+
+  document.getElementById('print-harian').addEventListener('click', ()=>{
+    const kelasSel = document.getElementById('guru-harian-class-tabs');
+    const kelas = kelasSel ? kelasSel.value : null;
+    if(!kelas){ alert('Pilih kelas dulu.'); return; }
+    if(!guruActiveKegiatan){ alert('Tidak ada kegiatan literasi pada tanggal ini.'); return; }
+    const kegiatanJudul = guruActiveKegiatan.judul;
+    const rows = domRowsToArray(recapBody);
+    buildA4Pdf({
+      suffix: 'harian',
+      docTitle: 'Rekap Harian Literasi',
+      metaLines: [
+        `Kelas: ${kelas}`,
+        `Kegiatan: ${kegiatanJudul}`,
+        `Tanggal: ${fmtTanggalIndo(currentGuruTanggal())}`,
+      ],
+      columns: COLS_ROSTER,
+      columnStyles: COLSTYLE_ROSTER,
+      rows,
+      filename: `rekap-harian-${kelas}-${currentGuruTanggal()}.pdf`,
+    });
+  });
+
+  document.getElementById('print-bulanan').addEventListener('click', ()=>{
+    const kelasSel = document.getElementById('guru-bulanan-class-tabs');
+    const kelas = kelasSel ? kelasSel.value : null;
+    if(!kelas){ alert('Pilih kelas dulu.'); return; }
+    const rows = domRowsToArray(bulananBody);
+    buildA4Pdf({
+      suffix: 'bulanan',
+      docTitle: 'Rekap Bulanan Literasi',
+      metaLines: [
+        `Kelas: ${kelas}`,
+        `Bulan: ${bulanSelect.value} ${tahunSelect.value}`,
+      ],
+      columns: ['No','Nama Siswa','Mengerjakan','Tidak','Sakit','Ijin','Alpha','Dispen'],
+      columnStyles: {
+        0:{cellWidth:10, halign:'center'}, 1:{cellWidth:50},
+        2:{cellWidth:21,halign:'center'}, 3:{cellWidth:21,halign:'center'},
+        4:{cellWidth:21,halign:'center'}, 5:{cellWidth:21,halign:'center'},
+        6:{cellWidth:21,halign:'center'}, 7:{cellWidth:21,halign:'center'},
+      },
+      rows,
+      filename: `rekap-bulanan-${kelas}-${bulanSelect.value}-${tahunSelect.value}.pdf`,
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Boot
+  // ------------------------------------------------------------------
+  (async function boot(){
+    const ok = await initAuthGuard();
+    if(!ok) return;
+
+    await Promise.all([loadProfiles(), loadKelas(), loadKegiatan()]);
+
+    refreshTtdGuruSelects();
+
+    if(currentUser.role === 'admin'){
+      refreshUserFilterKelasSelect();
+      renderUserTable();
+      refreshWaliSelect();
+      refreshKelasUserSelect();
+      renderKelasTable();
+      renderKegiatanAdmin();
+      updateAdminKegiatanDisplay();
+      renderAdminRekapClassTabs();
+    }
+    if(currentUser.role === 'guru' || currentUser.role === 'siswa'){
+      renderKegiatanList();
+      updateGuruKegiatanDisplay();
+      renderAllClassTabsGuru();
+    }
+    if(currentUser.role === 'siswa'){
+      document.getElementById('siswa-class-badge').textContent = currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Belum ada data kelas';
+      // Kegiatan yang tadinya terkunci harus otomatis "terbuka" begitu jam
+      // buka tercapai, tanpa siswa perlu memuat ulang halaman.
+      setInterval(()=>{
+        if(siswaList.classList.contains('active')) renderKegiatanList();
+      }, 30000);
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk — LITNUM SMANIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F6F3EC;
+    --card: #FFFFFF;
+    --ink: #211F1B;
+    --ink-soft: #746C5E;
+    --ink-faint: #A79E8C;
+    --rule: #E6E0D2;
+    --cover: #2E6B5B;
+    --cover-dark: #234F43;
+    --cover-soft: #E4F0EA;
+    --clay: #B14F3D;
+    --clay-soft: #F5E2DC;
+    --shadow-md: 0 24px 60px -20px rgba(33,31,27,.28);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #E4F0EA 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #F6EAD3 0%, transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  h1{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    margin:0;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .wrap{
+    width:100%;
+    max-width:960px;
+    display:grid;
+    grid-template-columns:1.05fr 1fr;
+    gap:0;
+    background:var(--card);
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:var(--shadow-md);
+    border:1px solid var(--rule);
+  }
+
+  /* Left: brand / intro panel */
+  .intro{
+    background:linear-gradient(155deg, var(--cover), var(--cover-dark));
+    color:#fff;
+    padding:44px 40px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .brand-mark{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:44px;
+    height:44px;
+    border-radius:12px;
+    background:rgba(255,255,255,.14);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    margin-bottom:28px;
+  }
+  .intro h1{font-size:26px; margin-bottom:10px;}
+  .intro p{font-size:13.5px; line-height:1.6; color:rgba(255,255,255,.85); max-width:34ch; margin:0;}
+  .intro-list{list-style:none; padding:0; margin:28px 0 0; display:flex; flex-direction:column; gap:14px;}
+  .intro-list li{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    font-size:12.5px;
+    color:rgba(255,255,255,.88);
+  }
+  .intro-list li .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:rgba(255,255,255,.75);
+    margin-top:6px;
+    flex-shrink:0;
+  }
+  .intro-foot{font-size:11.5px; color:rgba(255,255,255,.6); margin-top:32px;}
+
+  /* Right: form panel */
+  .form-side{
+    padding:44px 40px;
+    display:flex;
+    flex-direction:column;
+  }
+  .role-switch{
+    display:inline-flex;
+    gap:2px;
+    background:var(--paper);
+    padding:4px;
+    border-radius:999px;
+    margin-bottom:26px;
+    align-self:flex-start;
+  }
+  .role-switch button{
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:8px 15px;
+    background:transparent;
+    color:var(--ink-soft);
+    border:none;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .role-switch button.active{
+    background:var(--card);
+    color:var(--ink);
+    box-shadow:0 1px 2px rgba(33,31,27,.08);
+  }
+
+  .form-title{font-size:19px; margin-bottom:6px;}
+  .form-sub{font-size:12.5px; color:var(--ink-soft); margin-bottom:26px;}
+
+  form{display:flex; flex-direction:column; gap:16px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:7px;
+  }
+  .field input{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1px solid var(--rule);
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .field input:focus{
+    outline:2px solid var(--cover);
+    outline-offset:1px;
+    background:var(--card);
+  }
+
+  .submit-btn{
+    margin-top:6px;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    font-weight:700;
+    padding:13px 18px;
+    border-radius:10px;
+    border:none;
+    background:var(--cover);
+    color:#fff;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .submit-btn:hover{background:var(--cover-dark);}
+  .submit-btn:disabled{background:var(--ink-faint); cursor:default;}
+
+  .alert{
+    display:none;
+    font-size:12.5px;
+    padding:11px 14px;
+    border-radius:10px;
+    background:var(--clay-soft);
+    color:var(--clay);
+    margin-bottom:4px;
+  }
+  .alert.show{display:block;}
+
+  .form-foot{
+    margin-top:auto;
+    padding-top:26px;
+    font-size:11.5px;
+    color:var(--ink-faint);
+    line-height:1.6;
+  }
+
+  @media (max-width:760px){
+    .wrap{grid-template-columns:1fr;}
+    .intro{display:none;}
+    .form-side{padding:36px 26px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="intro">
+    <div>
+      <div class="brand-mark">LS</div>
+      <h1>LITNUM SMANIS</h1>
+      <p>Rekap kegiatan membaca sekolah — ceklis harian, rekap bulanan, dan manajemen kelas dalam satu tempat.</p>
+      <ul class="intro-list">
+        <li><span class="dot"></span> Siswa petugas mengisi ceklis harian kelasnya.</li>
+        <li><span class="dot"></span> Guru memantau rekap harian &amp; bulanan tiap kelas.</li>
+        <li><span class="dot"></span> Admin mengelola pengguna, kelas, dan kegiatan literasi.</li>
+      </ul>
+    </div>
+    <div class="intro-foot">Akun dibuat oleh admin sekolah. Hubungi admin jika belum memiliki akun.</div>
+  </div>
+
+  <div class="form-side">
+    <div class="role-switch" id="role-switch">
+      <button type="button" class="active" data-role="siswa">Siswa</button>
+      <button type="button" data-role="guru">Guru</button>
+      <button type="button" data-role="admin">Admin</button>
+    </div>
+
+    <div class="form-title" id="form-title">Masuk sebagai Siswa</div>
+    <div class="form-sub" id="form-sub">Gunakan email &amp; kata sandi yang diberikan admin.</div>
+
+    <div class="alert" id="login-alert"></div>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="nama@sekolah.sch.id" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">Kata sandi</label>
+        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="submit-btn" id="submit-btn">Masuk</button>
+    </form>
+
+    <div class="form-foot">
+      Lupa kata sandi? Minta admin untuk mengatur ulang kata sandi akun Anda dari Supabase.
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  // TODO: ganti dengan Project URL & anon key dari Supabase → Project Settings → API
+  const SUPABASE_URL = 'https://mzmbdqodoycauatcdgre.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Q2mh3YnvsB2A9VlkhVcdkQ_0dYxGGND';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const roleTitles = {
+    siswa: ['Masuk sebagai Siswa', 'Gunakan email & kata sandi yang diberikan admin.'],
+    guru:  ['Masuk sebagai Guru', 'Pantau rekap literasi kelas yang Anda ampu.'],
+    admin: ['Masuk sebagai Admin', 'Kelola pengguna, kelas, dan kegiatan literasi.'],
+  };
+
+  let selectedRole = 'siswa';
+  const switchBtns = document.querySelectorAll('#role-switch button');
+  const formTitle = document.getElementById('form-title');
+  const formSub = document.getElementById('form-sub');
+
+  switchBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      switchBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedRole = btn.dataset.role;
+      const [title, sub] = roleTitles[selectedRole];
+      formTitle.textContent = title;
+      formSub.textContent = sub;
+      hideAlert();
+    });
+  });
+
+  const alertBox = document.getElementById('login-alert');
+  function showAlert(msg){
+    alertBox.textContent = msg;
+    alertBox.classList.add('show');
+  }
+  function hideAlert(){
+    alertBox.classList.remove('show');
+  }
+
+  // Jika sudah ada sesi aktif, langsung lempar ke app
+  supabase.auth.getSession().then(({ data: { session } })=>{
+    if(session) window.location.href = 'app.html';
+  });
+
+  const form = document.getElementById('login-form');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    hideAlert();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Memeriksa…';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if(error){
+      showAlert('Email atau kata sandi salah. Coba lagi.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Masuk';
+      return;
+    }
+
+    // Cek peran sebenarnya dari tabel "profiles" — mencegah siswa membuka
+    // tab login guru/admin (atau sebaliknya).
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    if(profileError || !profile){
+      showAlert('Profil akun tidak ditemukan. Hubungi admin.');
+      await supabase.auth.signOut();
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Masuk';
+      return;
+    }
+
+    if(profile.role !== selectedRole){
+      showAlert(`Akun ini terdaftar sebagai "${profile.role}", bukan "${selectedRole}". Pilih tab peran yang sesuai.`);
+      await supabase.auth.signOut();
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Masuk';
+      return;
+    }
+
+    window.location.href = 'app.html';
+  });
+</script>
+</body>
+</html>
