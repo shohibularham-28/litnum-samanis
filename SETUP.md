@@ -50,6 +50,21 @@ Setelah ini, semua akun guru & siswa berikutnya bisa dibuat langsung dari menu
 Admin/Guru di aplikasi — dropdown tanda tangan, pilihan wali kelas, dan daftar
 siswa akan otomatis terisi dari data yang sama.
 
+## Update: kolom Email ditampilkan di daftar Pengguna
+- Tabel `profiles` sekarang punya kolom `email` (lihat `supabase/schema.sql`).
+  Jalankan ulang skema ini di SQL Editor — perintah di dalamnya otomatis
+  mengisi email untuk akun yang **sudah ada** dengan menyalin dari
+  `auth.users`, jadi tidak perlu isi manual satu-satu.
+- Akun **baru** yang dibuat lewat "Tambah Pengguna" (Admin) atau
+  "Tambah Siswa" (Guru) otomatis tersimpan emailnya ke `profiles` — perlu
+  **deploy ulang Edge Function `manage-user`** (`supabase functions deploy
+  manage-user`) agar perubahan ini aktif.
+- Kolom Email sekarang muncul di tabel **Admin → Pengguna** dan
+  **Guru → Kelola Siswa**. Kolom ini hanya untuk dilihat (belum bisa diedit
+  dari UI, karena mengubah email butuh penanganan khusus lewat
+  `supabase.auth.admin.updateUserById`) — kalau perlu ganti email pengguna,
+  untuk sementara masih lewat Supabase Dashboard → Authentication → Users.
+
 ## Yang berubah di app.html
 - **Kegiatan sekarang punya Deskripsi (opsional)**: admin bisa mengisi deskripsi
   kegiatan lewat kolom teks di form Tambah Kegiatan (atau lewat "Edit"). Deskripsi

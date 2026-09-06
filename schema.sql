@@ -21,6 +21,15 @@ alter table public.profiles add column if not exists jabatan text default 'biasa
 alter table public.profiles drop constraint if exists profiles_jabatan_check;
 alter table public.profiles add constraint profiles_jabatan_check check (jabatan in ('biasa','petugas'));
 alter table public.profiles add column if not exists created_at timestamptz not null default now();
+alter table public.profiles add column if not exists email text;
+
+-- Isi kolom email untuk akun yang sudah ada sebelum kolom ini ditambahkan
+-- (akun baru sudah otomatis terisi lewat Edge Function manage-user).
+-- Aman dijalankan berkali-kali — hanya mengisi baris yang emailnya masih kosong.
+update public.profiles p
+set email = u.email
+from auth.users u
+where p.id = u.id and p.email is null;
 
 -- ---------- 2. KELAS ----------
 create table if not exists public.kelas (

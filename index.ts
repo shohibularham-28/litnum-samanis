@@ -103,6 +103,7 @@ Deno.serve(async (req) => {
         kelas: kelas || null,
         nip: nip || null,
         jabatan: role === "siswa" ? (jabatan || "biasa") : null,
+        email,
       });
       if (profileErr) {
         // rollback akun auth kalau insert profil gagal, biar tidak jadi akun "yatim"
