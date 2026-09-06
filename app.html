@@ -495,6 +495,35 @@
     border-bottom:1px solid var(--rule);
   }
   .recap-table tr:hover td{background:var(--paper);}
+  .recap-table .no-col{width:36px; text-align:center;}
+  .recap-table td.no-col{text-align:center; color:var(--ink-faint);}
+  .sortable-table th[data-sort]{
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+  .sortable-table th[data-sort]:hover{color:var(--ink);}
+  .sortable-table th[data-sort]::after{
+    content:'↕';
+    display:inline-block;
+    margin-left:4px;
+    font-size:10px;
+    opacity:.4;
+  }
+  .sortable-table th[data-sort].sort-asc::after{content:'↑'; opacity:1;}
+  .sortable-table th[data-sort].sort-desc::after{content:'↓'; opacity:1;}
+  .pagination-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:14px;
+  }
+  .pagination-info{font-size:12px; color:var(--ink-faint);}
+  .pagination-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .pagination-controls .pill-btn{padding:6px 14px; font-size:12px;}
+  .pagination-page{font-size:12px; color:var(--ink-soft); padding:0 4px; white-space:nowrap;}
   .edit-input{
     width:100%;
     font-family:'Inter', sans-serif;
@@ -1139,8 +1168,6 @@
         <div class="sub">Tambah, ubah, atau hapus akun admin, guru, dan siswa.</div>
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="pill-btn" id="download-template-btn">Unduh Template Excel</button>
-        <button class="pill-btn" id="toggle-import">Impor Massal (Excel)</button>
         <button class="pill-btn solid" id="toggle-add">+ Tambah Pengguna</button>
       </div>
     </div>
@@ -1153,6 +1180,10 @@
     </div>
 
     <div class="admin-panel active" id="admin-users">
+      <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+        <button class="pill-btn" id="download-template-btn">Unduh Template Excel</button>
+        <button class="pill-btn" id="toggle-import">Impor Massal (Excel)</button>
+      </div>
       <div class="add-form" id="import-form" style="grid-template-columns:1fr auto auto;">
         <input type="file" id="import-file-input" accept=".xlsx,.xls">
         <button class="pill-btn solid" id="import-run-btn">Impor</button>
@@ -1198,10 +1229,30 @@
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
         <button class="pill-btn danger-outline" id="delete-selected-btn" disabled>Hapus Terpilih (0)</button>
       </div>
-      <table class="recap-table">
-        <thead><tr><th class="checkbox-col"><input type="checkbox" id="user-select-all"></th><th>Nama</th><th>Peran</th><th>NIP</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead>
+      <div class="table-scroll">
+      <table class="recap-table sortable-table" id="user-table">
+        <thead><tr>
+          <th class="checkbox-col"><input type="checkbox" id="user-select-all"></th>
+          <th class="no-col">No</th>
+          <th data-sort="full_name">Nama</th>
+          <th data-sort="role">Peran</th>
+          <th data-sort="nip">NIP</th>
+          <th data-sort="kelas">Kelas</th>
+          <th data-sort="status">Status</th>
+          <th>Aksi</th>
+        </tr></thead>
         <tbody id="user-body"></tbody>
       </table>
+      </div>
+      <div class="pagination-row" id="user-pagination">
+        <div class="pagination-info" id="user-pagination-info"></div>
+        <div class="pagination-controls">
+          <button class="pill-btn" id="user-prev-page">‹ Sebelumnya</button>
+          <span class="pagination-page" id="user-page-indicator"></span>
+          <button class="pill-btn" id="user-next-page">Berikutnya ›</button>
+          <button class="pill-btn" id="user-toggle-showall">Tampilkan Semua</button>
+        </div>
+      </div>
     </div>
 
     <div class="admin-panel" id="admin-kelas">
@@ -1576,6 +1627,11 @@
   // ------------------------------------------------------------------
   const userBody = document.getElementById('user-body');
   let selectedUserIds = new Set();
+  const USER_PAGE_SIZE = 20;
+  let userPage = 1;
+  let userShowAll = false;
+  let userSortKey = null;
+  let userSortDir = 'asc';
 
   function updateDeleteSelectedBtn(){
     const btn = document.getElementById('delete-selected-btn');
@@ -1597,11 +1653,28 @@
   function getFilteredUsers(){
     const role = document.getElementById('user-filter-role')?.value || '';
     const kelas = document.getElementById('user-filter-kelas')?.value || '';
-    return profilesData.filter(u=>{
+    const filtered = profilesData.filter(u=>{
       if(role && u.role !== role) return false;
       if(kelas && u.kelas !== kelas) return false;
       return true;
     });
+    if(userSortKey){
+      const dir = userSortDir === 'asc' ? 1 : -1;
+      filtered.sort((a,b)=>{
+        let va, vb;
+        if(userSortKey === 'status'){
+          va = statusLabelUser(a); vb = statusLabelUser(b);
+        }else{
+          va = a[userSortKey]; vb = b[userSortKey];
+        }
+        va = (va === null || va === undefined) ? '' : String(va).toLowerCase();
+        vb = (vb === null || vb === undefined) ? '' : String(vb).toLowerCase();
+        if(va < vb) return -1 * dir;
+        if(va > vb) return 1 * dir;
+        return 0;
+      });
+    }
+    return filtered;
   }
 
   function statusLabelUser(u){
@@ -1613,9 +1686,10 @@
     return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   }
 
-  function userViewRowHtml(u){
+  function userViewRowHtml(u, no){
     const isSelf = currentUser?.id === u.id;
     return `<td class="checkbox-col"><input type="checkbox" class="user-row-checkbox" data-id="${u.id}" ${isSelf ? 'disabled title="Tidak bisa menghapus akun sendiri"' : ''}></td>
+      <td class="no-col">${no}</td>
       <td>${esc(u.full_name)}</td><td><span class="role-tag ${u.role}">${u.role}</span></td><td>${u.nip || "—"}</td><td>${u.kelas || "—"}</td>
       <td>${statusLabelUser(u)}</td>
       <td class="row-actions"><button class="link-btn" data-edit="${u.id}">Edit</button><button class="link-btn" data-pw="${u.id}">Ganti Sandi</button><button class="link-btn danger" data-del="${u.id}">Hapus</button></td>`;
@@ -1627,8 +1701,11 @@
   }
 
   function enterUserEditMode(tr, u){
+    const noCell = tr.querySelector('.no-col');
+    const noVal = noCell ? noCell.textContent : '';
     tr.innerHTML = `
       <td class="checkbox-col"></td>
+      <td class="no-col">${noVal}</td>
       <td><input type="text" class="edit-input edit-nama" value="${esc(u.full_name)}"></td>
       <td>
         <select class="edit-input edit-peran">
@@ -1685,27 +1762,88 @@
     });
   }
 
+  function updateUserSortHeaderClasses(){
+    document.querySelectorAll('#user-table th[data-sort]').forEach(th=>{
+      th.classList.remove('sort-asc','sort-desc');
+      if(th.dataset.sort === userSortKey){
+        th.classList.add(userSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      }
+    });
+  }
+
+  function renderUserPagination(totalCount, totalPages, startNo, endNo){
+    const info = document.getElementById('user-pagination-info');
+    const indicator = document.getElementById('user-page-indicator');
+    const prevBtn = document.getElementById('user-prev-page');
+    const nextBtn = document.getElementById('user-next-page');
+    const toggleBtn = document.getElementById('user-toggle-showall');
+    const paginationWrap = document.getElementById('user-pagination');
+
+    if(totalCount === 0){
+      paginationWrap.style.display = 'none';
+      return;
+    }
+    paginationWrap.style.display = 'flex';
+
+    if(userShowAll){
+      info.textContent = `Menampilkan semua ${totalCount} pengguna`;
+      indicator.textContent = '';
+      prevBtn.style.display = 'none';
+      nextBtn.style.display = 'none';
+      toggleBtn.textContent = 'Tampilkan 20 per Halaman';
+    }else{
+      info.textContent = `Menampilkan ${startNo}–${endNo} dari ${totalCount} pengguna`;
+      indicator.textContent = `Halaman ${userPage} / ${totalPages}`;
+      prevBtn.style.display = '';
+      nextBtn.style.display = '';
+      prevBtn.disabled = userPage <= 1;
+      nextBtn.disabled = userPage >= totalPages;
+      toggleBtn.textContent = 'Tampilkan Semua';
+    }
+  }
+
   function renderUserTable(){
     selectedUserIds = new Set();
     const selectAllCb = document.getElementById('user-select-all');
     if(selectAllCb) selectAllCb.checked = false;
     userBody.innerHTML = "";
+    updateUserSortHeaderClasses();
     const filtered = getFilteredUsers();
     if(profilesData.length === 0){
-      userBody.innerHTML = '<tr><td colspan="7" class="empty-state">Belum ada pengguna. Tambahkan lewat tombol "+ Tambah Pengguna".</td></tr>';
+      userBody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada pengguna. Tambahkan lewat tombol "+ Tambah Pengguna".</td></tr>';
       updateDeleteSelectedBtn();
+      renderUserPagination(0, 0, 0, 0);
       return;
     }
     if(filtered.length === 0){
-      userBody.innerHTML = '<tr><td colspan="7" class="empty-state">Tidak ada pengguna yang cocok dengan filter ini.</td></tr>';
+      userBody.innerHTML = '<tr><td colspan="8" class="empty-state">Tidak ada pengguna yang cocok dengan filter ini.</td></tr>';
       updateDeleteSelectedBtn();
+      renderUserPagination(0, 0, 0, 0);
       return;
     }
-    filtered.forEach(u=>{
+
+    const totalCount = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / USER_PAGE_SIZE));
+    if(userPage > totalPages) userPage = totalPages;
+    if(userPage < 1) userPage = 1;
+
+    let pageItems, startNo, endNo;
+    if(userShowAll){
+      pageItems = filtered;
+      startNo = 1;
+      endNo = totalCount;
+    }else{
+      startNo = (userPage - 1) * USER_PAGE_SIZE + 1;
+      endNo = Math.min(userPage * USER_PAGE_SIZE, totalCount);
+      pageItems = filtered.slice(startNo - 1, endNo);
+    }
+
+    pageItems.forEach((u, i)=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = userViewRowHtml(u);
+      tr.innerHTML = userViewRowHtml(u, startNo + i);
       userBody.appendChild(tr);
     });
+    renderUserPagination(totalCount, totalPages, startNo, endNo);
     userBody.querySelectorAll('.user-row-checkbox').forEach(cb=>{
       cb.addEventListener('change', ()=>{
         if(cb.checked) selectedUserIds.add(cb.dataset.id); else selectedUserIds.delete(cb.dataset.id);
@@ -1745,8 +1883,34 @@
     });
   }
 
-  document.getElementById('user-filter-role').addEventListener('change', renderUserTable);
-  document.getElementById('user-filter-kelas').addEventListener('change', renderUserTable);
+  document.getElementById('user-filter-role').addEventListener('change', ()=>{ userPage = 1; renderUserTable(); });
+  document.getElementById('user-filter-kelas').addEventListener('change', ()=>{ userPage = 1; renderUserTable(); });
+
+  document.querySelectorAll('#user-table th[data-sort]').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.sort;
+      if(userSortKey === key){
+        userSortDir = userSortDir === 'asc' ? 'desc' : 'asc';
+      }else{
+        userSortKey = key;
+        userSortDir = 'asc';
+      }
+      userPage = 1;
+      renderUserTable();
+    });
+  });
+
+  document.getElementById('user-prev-page').addEventListener('click', ()=>{
+    if(userPage > 1){ userPage--; renderUserTable(); }
+  });
+  document.getElementById('user-next-page').addEventListener('click', ()=>{
+    userPage++; renderUserTable();
+  });
+  document.getElementById('user-toggle-showall').addEventListener('click', ()=>{
+    userShowAll = !userShowAll;
+    userPage = 1;
+    renderUserTable();
+  });
 
   document.getElementById('user-select-all').addEventListener('change', (e)=>{
     const checked = e.target.checked;
