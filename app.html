@@ -1340,9 +1340,11 @@
         </div>
       </div>
 
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
         <button class="pill-btn danger-outline" id="delete-selected-btn" disabled>Hapus Terpilih (0)</button>
+        <button class="pill-btn solid" id="export-user-excel-btn">📥 Export ke Excel</button>
       </div>
+      <div class="edit-hint" style="margin-top:-6px; margin-bottom:14px;">ℹ️ Export akan mengikuti filter Jenis Pengguna &amp; Kelas yang sedang dipilih di atas. Biarkan filter pada "Semua Peran" &amp; "Semua Kelas" untuk mengekspor seluruh data pengguna.</div>
       <div class="table-scroll">
       <table class="recap-table sortable-table" id="user-table">
         <thead><tr>
@@ -2331,6 +2333,48 @@
       { nama: 'Petunjuk', rows: petunjuk, lebarKolom: [26,72] },
     ]);
     XLSX.writeFile(wb, 'template_tambah_pengguna_masal.xlsx');
+  });
+
+  // ---- Export data pengguna ke Excel (mengikuti filter Peran & Kelas aktif) ----
+  document.getElementById('export-user-excel-btn').addEventListener('click', ()=>{
+    const filtered = getFilteredUsers();
+    if(filtered.length === 0){
+      alert('Tidak ada data pengguna untuk diekspor dengan filter saat ini.');
+      return;
+    }
+    const roleVal = document.getElementById('user-filter-role')?.value || '';
+    const kelasVal = document.getElementById('user-filter-kelas')?.value || '';
+    const roleLabelMap = { admin:'Admin', guru:'Guru', siswa:'Siswa' };
+    const roleLabel = roleVal ? roleLabelMap[roleVal] : 'Semua Peran';
+    const kelasLabel = kelasVal ? kelasVal : 'Semua Kelas';
+
+    const header = ['No','Nama Lengkap','Email','Peran','NIP/NISN','Kelas','Status'];
+    const rows = filtered.map((u,i)=>[
+      i+1,
+      u.full_name || '',
+      u.email || '',
+      roleLabelMap[u.role] || u.role || '',
+      u.nip || '',
+      u.kelas || '',
+      statusLabelUser(u),
+    ]);
+    const keterangan = [
+      ['Keterangan Export'],
+      ['Filter Jenis Pengguna', roleLabel],
+      ['Filter Kelas', kelasLabel],
+      ['Jumlah Data', filtered.length],
+      ['Tanggal Export', new Date().toLocaleString('id-ID')],
+    ];
+    const wb = buatWorkbookSel([
+      { nama: 'Data Pengguna', rows: [header, ...rows], lebarKolom: [5,24,28,12,18,14,18] },
+      { nama: 'Keterangan', rows: keterangan, lebarKolom: [24,28] },
+    ]);
+    const namaFileBagian = [
+      'export_pengguna',
+      roleVal || 'semua-peran',
+      kelasVal ? kelasVal.replace(/[^a-zA-Z0-9-_]/g,'') : 'semua-kelas',
+    ].join('_');
+    XLSX.writeFile(wb, `${namaFileBagian}.xlsx`);
   });
 
   document.getElementById('toggle-import').addEventListener('click',()=>{
