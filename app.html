@@ -657,6 +657,28 @@
     color:var(--ink);
     max-width:100%;
   }
+  .kelas-picker{display:flex; align-items:center; gap:6px;}
+  .kelas-picker .month-picker-select{flex:1; min-width:0;}
+  .kelas-picker-nav{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:700;
+    width:32px;
+    height:32px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink);
+    cursor:pointer;
+    padding:0;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .kelas-picker-nav:hover{border-color:var(--ink-faint);}
+  .kelas-picker-nav:disabled{opacity:.4; cursor:not-allowed;}
   .kegiatan-auto{
     font-family:'Inter',sans-serif;
     padding:8px 14px;
@@ -1134,7 +1156,11 @@
 
       <div class="filter-block">
         <div class="filter-label">Kelas</div>
-        <select class="month-picker-select" id="guru-harian-class-tabs"></select>
+        <div class="kelas-picker">
+          <button type="button" class="kelas-picker-nav" id="guru-harian-class-prev" aria-label="Kelas sebelumnya">‹</button>
+          <select class="month-picker-select" id="guru-harian-class-tabs"></select>
+          <button type="button" class="kelas-picker-nav" id="guru-harian-class-next" aria-label="Kelas berikutnya">›</button>
+        </div>
       </div>
 
       <div class="filter-block">
@@ -1170,7 +1196,11 @@
       <div class="filter-row">
         <div class="filter-block">
           <div class="filter-label">Kelas</div>
-          <select class="month-picker-select" id="guru-bulanan-class-tabs"></select>
+          <div class="kelas-picker">
+            <button type="button" class="kelas-picker-nav" id="guru-bulanan-class-prev" aria-label="Kelas sebelumnya">‹</button>
+            <select class="month-picker-select" id="guru-bulanan-class-tabs"></select>
+            <button type="button" class="kelas-picker-nav" id="guru-bulanan-class-next" aria-label="Kelas berikutnya">›</button>
+          </div>
         </div>
         <div class="filter-block">
           <div class="filter-label">Bulan &amp; Tahun</div>
@@ -1244,7 +1274,11 @@
 
       <div class="filter-block" style="margin-bottom:16px;">
         <div class="filter-label">Kelas Anda</div>
-        <select class="month-picker-select" id="guru-siswa-class-tabs"></select>
+        <div class="kelas-picker">
+          <button type="button" class="kelas-picker-nav" id="guru-siswa-class-prev" aria-label="Kelas sebelumnya">‹</button>
+          <select class="month-picker-select" id="guru-siswa-class-tabs"></select>
+          <button type="button" class="kelas-picker-nav" id="guru-siswa-class-next" aria-label="Kelas berikutnya">›</button>
+        </div>
       </div>
 
       <div class="add-form" id="import-form-siswa" style="grid-template-columns:1fr auto auto;">
@@ -1481,7 +1515,11 @@
           </div>
           <div class="filter-block">
             <div class="filter-label">Kelas</div>
-            <select class="month-picker-select" id="admin-rekap-harian-class-tabs"></select>
+            <div class="kelas-picker">
+              <button type="button" class="kelas-picker-nav" id="admin-rekap-harian-class-prev" aria-label="Kelas sebelumnya">‹</button>
+              <select class="month-picker-select" id="admin-rekap-harian-class-tabs"></select>
+              <button type="button" class="kelas-picker-nav" id="admin-rekap-harian-class-next" aria-label="Kelas berikutnya">›</button>
+            </div>
           </div>
           <div class="filter-block">
             <div class="filter-label">Tanggal</div>
@@ -1514,7 +1552,11 @@
         <div class="filter-row">
           <div class="filter-block">
             <div class="filter-label">Kelas</div>
-            <select class="month-picker-select" id="admin-rekap-bulanan-class-tabs"></select>
+            <div class="kelas-picker">
+              <button type="button" class="kelas-picker-nav" id="admin-rekap-bulanan-class-prev" aria-label="Kelas sebelumnya">‹</button>
+              <select class="month-picker-select" id="admin-rekap-bulanan-class-tabs"></select>
+              <button type="button" class="kelas-picker-nav" id="admin-rekap-bulanan-class-next" aria-label="Kelas berikutnya">›</button>
+            </div>
           </div>
           <div class="filter-block">
             <div class="filter-label">Bulan &amp; Tahun</div>
@@ -1724,48 +1766,18 @@
   let kegiatanData = [];   // public.kegiatan
   let ceklisCache = {};    // key `${kegiatan_id}|${kelas}` -> rows
 
-  // ------------------------------------------------------------------
-  // Supabase (lewat PostgREST) membatasi setiap query SELECT ke maksimal
-  // 1000 baris secara default, walau tanpa .limit() sekalipun. Kalau
-  // jumlah baris di tabel sudah lebih dari itu, sisanya diam-diam TIDAK
-  // ikut kebawa — makanya user/kegiatan/kelas atau rekap yang baru
-  // ditambahkan bisa saja "hilang" dari tampilan padahal datanya ada di
-  // database. fetchAllPages() mengambil data per halaman 1000 baris dan
-  // menggabungkannya, supaya semua baris selalu ikut kebawa berapa pun
-  // jumlahnya.
-  const SUPABASE_PAGE_SIZE = 1000;
-  async function fetchAllPages(buildQuery){
-    let from = 0;
-    let all = [];
-    while(true){
-      const { data, error } = await buildQuery(from, from + SUPABASE_PAGE_SIZE - 1);
-      if(error) return { data: null, error };
-      const rows = data || [];
-      all = all.concat(rows);
-      if(rows.length < SUPABASE_PAGE_SIZE) break;
-      from += SUPABASE_PAGE_SIZE;
-    }
-    return { data: all, error: null };
-  }
-
   async function loadProfiles(){
-    const { data, error } = await fetchAllPages((from, to) =>
-      supabase.from('profiles').select('*').order('created_at', { ascending: true }).range(from, to)
-    );
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: true });
     if(error){ console.error(error); profilesData = []; return; }
     profilesData = data || [];
   }
   async function loadKelas(){
-    const { data, error } = await fetchAllPages((from, to) =>
-      supabase.from('kelas').select('*, wali:wali_guru_id(full_name, nip)').order('nama').range(from, to)
-    );
+    const { data, error } = await supabase.from('kelas').select('*, wali:wali_guru_id(full_name, nip)').order('nama');
     if(error){ console.error(error); kelasData = []; return; }
     kelasData = data || [];
   }
   async function loadKegiatan(){
-    const { data, error } = await fetchAllPages((from, to) =>
-      supabase.from('kegiatan').select('*').order('created_at', { ascending: false }).range(from, to)
-    );
+    const { data, error } = await supabase.from('kegiatan').select('*').order('created_at', { ascending: false });
     if(error){ console.error(error); kegiatanData = []; return; }
     kegiatanData = data || [];
   }
@@ -3959,13 +3971,9 @@
     const lastDay = new Date(tahun, bulanIdx+1, 0).getDate();
     const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
-    // Dipaginasi (lihat fetchAllPages) supaya rekap sebulan tidak kepotong
-    // diam-diam saat baris ceklis kelas ini dalam sebulan > 1000.
-    const { data, error } = await fetchAllPages((from, to) =>
-      supabase.from('ceklis')
-        .select('siswa_id, status, tanggal, siswa:siswa_id(full_name)')
-        .eq('kelas', kelas).gte('tanggal', first).lte('tanggal', last).range(from, to)
-    );
+    const { data, error } = await supabase.from('ceklis')
+      .select('siswa_id, status, tanggal, siswa:siswa_id(full_name)')
+      .eq('kelas', kelas).gte('tanggal', first).lte('tanggal', last);
     if(error){ console.error(error); bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Gagal memuat data.</td></tr>'; return; }
 
     const perSiswa = {};
@@ -4092,14 +4100,10 @@
 
     // Ambil langsung by tanggal (bukan lewat kegiatan_id) supaya rekap tetap
     // tampil walau kegiatan yang menaunginya sudah dihapus admin — data
-    // ceklis sendiri tidak pernah ikut terhapus (lihat schema.sql). Dipaginasi
-    // supaya tidak kepotong diam-diam kalau baris ceklis tanggal ini > 1000
-    // (misalnya "Semua Kelas" di sekolah dengan banyak siswa).
-    const { data, error } = await fetchAllPages((from, to) => {
-      let q = supabase.from('ceklis').select('*, siswa:siswa_id(full_name)').eq('tanggal', tanggal).range(from, to);
-      if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) q = q.eq('kelas', kelasFilter);
-      return q;
-    });
+    // ceklis sendiri tidak pernah ikut terhapus (lihat schema.sql).
+    let query = supabase.from('ceklis').select('*, siswa:siswa_id(full_name)').eq('tanggal', tanggal);
+    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
+    const { data, error } = await query;
     if(error){
       console.error(error);
       adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Gagal memuat data.</td></tr>';
@@ -4144,15 +4148,11 @@
     const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
     const kelasLabel = (!kelasFilter || kelasFilter === ADMIN_ALL_KELAS) ? 'Semua Kelas' : `Kelas ${kelasFilter}`;
 
-    // Dipaginasi (lihat fetchAllPages) supaya rekap sebulan tidak kepotong
-    // diam-diam saat baris ceklisnya > 1000 (kelas banyak × 20-31 hari).
-    const { data, error } = await fetchAllPages((from, to) => {
-      let q = supabase.from('ceklis')
-        .select('siswa_id, kelas, status, tanggal, siswa:siswa_id(full_name)')
-        .gte('tanggal', first).lte('tanggal', last).range(from, to);
-      if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) q = q.eq('kelas', kelasFilter);
-      return q;
-    });
+    let query = supabase.from('ceklis')
+      .select('siswa_id, kelas, status, tanggal, siswa:siswa_id(full_name)')
+      .gte('tanggal', first).lte('tanggal', last);
+    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
+    const { data, error } = await query;
     if(error){
       console.error(error);
       adminBulananBody.innerHTML = '<tr><td colspan="9" class="empty-state">Gagal memuat data.</td></tr>';
@@ -4245,38 +4245,34 @@
   }
 
   // ---- Admin: Hapus rekap SATU kelas pada SATU tanggal saja ----
-  // Hapus berdasarkan kelas & tanggal saja (BUKAN kegiatan_id) — supaya
-  // tombol ini tetap bisa menghapus data lama walaupun kegiatan yang
-  // menaunginya sudah dihapus admin (kegiatan_id baris itu jadi NULL, tapi
-  // data ceklisnya sendiri tetap tersimpan dan tetap harus bisa dihapus).
-  // Harus pilih satu kelas dulu (bukan "Semua Kelas"); hanya baris ceklis
-  // kelas & tanggal itu yang dihapus, kelas/tanggal lain tidak tersentuh.
+  // Harus pilih kegiatan + satu kelas (bukan "Semua Kelas") + tanggal dulu;
+  // hanya baris ceklis yang cocok ketiganya yang dihapus, tanggal & kelas
+  // lain tidak tersentuh.
   const hapusRekapTanggalBtn = document.getElementById('hapus-rekap-tanggal-btn');
   if(hapusRekapTanggalBtn){
     hapusRekapTanggalBtn.addEventListener('click', async ()=>{
-      const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : null;
+      const kegiatanId = adminActiveKegiatan ? adminActiveKegiatan.id : null;
+      const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : '';
       const harianSel = document.getElementById('admin-rekap-harian-class-tabs');
       const kelasFilter = harianSel ? harianSel.value : null;
       const tanggal = currentAdminHarianTanggal();
 
+      if(!kegiatanId){ alert('Tidak ada kegiatan literasi pada tanggal ini.'); return; }
       if(!kelasFilter || kelasFilter === ADMIN_ALL_KELAS){
         alert('Pilih satu kelas terlebih dahulu (bukan "Semua Kelas") sebelum menghapus rekap.');
         return;
       }
 
-      const labelKegiatan = kegiatanJudul
-        ? `pada kegiatan "${kegiatanJudul}"`
-        : '(kegiatan yang menaunginya sudah dihapus, tapi datanya masih tersimpan)';
       if(!confirm(
-        `Hapus data ceklis Kelas ${kelasFilter} ${labelKegiatan} untuk tanggal ${fmtTanggalIndo(tanggal)}?\n\n` +
+        `Hapus data ceklis Kelas ${kelasFilter} pada kegiatan "${kegiatanJudul}" untuk tanggal ${fmtTanggalIndo(tanggal)}?\n\n` +
         'Hanya data kelas & tanggal ini yang akan dihapus — rekap tanggal lain dan kelas lain tidak terpengaruh. Tindakan ini tidak bisa dibatalkan.'
       )) return;
 
       hapusRekapTanggalBtn.disabled = true;
       hapusRekapTanggalBtn.textContent = 'Menghapus…';
 
-      const { error, count } = await supabase.from('ceklis').delete({ count: 'exact' })
-        .eq('kelas', kelasFilter).eq('tanggal', tanggal);
+      const { error } = await supabase.from('ceklis').delete()
+        .eq('kegiatan_id', kegiatanId).eq('kelas', kelasFilter).eq('tanggal', tanggal);
 
       hapusRekapTanggalBtn.disabled = false;
       hapusRekapTanggalBtn.textContent = '🗑️ Hapus Rekap Tanggal Ini';
@@ -4285,18 +4281,9 @@
         alert('Gagal menghapus rekap: ' + error.message);
         return;
       }
-      if(!count){
-        alert('Tidak ada data ceklis untuk Kelas ' + kelasFilter + ' pada tanggal ini.');
-        return;
-      }
 
-      // Bersihkan cache kegiatan manapun yang berkaitan dengan kelas ini —
-      // baris yang dihapus tadi bisa saja tadinya tercatat di bawah kegiatan
-      // yang berbeda-beda (termasuk yang sudah dihapus / kegiatan_id NULL).
-      Object.keys(ceklisCache).forEach(key=>{
-        if(key.endsWith(`|${kelasFilter}`)) delete ceklisCache[key];
-      });
-      alert(`Rekap Kelas ${kelasFilter} tanggal ${fmtTanggalIndo(tanggal)} berhasil dihapus (${count} baris).`);
+      delete ceklisCache[`${kegiatanId}|${kelasFilter}`];
+      alert(`Rekap Kelas ${kelasFilter} tanggal ${fmtTanggalIndo(tanggal)} berhasil dihapus.`);
       await renderAdminRekapHarian(kelasFilter);
     });
   }
@@ -4613,16 +4600,11 @@
     if(mulai > akhir){ alert('Tanggal mulai tidak boleh setelah tanggal akhir.'); return; }
 
     rankingCaption.textContent = 'Memuat data…';
-    // Dipaginasi (lihat fetchAllPages) supaya ranking rentang tanggal panjang
-    // (seluruh kelas × banyak hari) tidak kepotong diam-diam saat > 1000 baris.
-    const { data, error } = await fetchAllPages((from, to) =>
-      supabase.from('ceklis')
-        .select('siswa_id')
-        .eq('status', 'hadir')
-        .gte('tanggal', mulai)
-        .lte('tanggal', akhir)
-        .range(from, to)
-    );
+    const { data, error } = await supabase.from('ceklis')
+      .select('siswa_id')
+      .eq('status', 'hadir')
+      .gte('tanggal', mulai)
+      .lte('tanggal', akhir);
     if(error){
       console.error(error);
       rankingCaption.textContent = 'Gagal memuat data.';
@@ -4727,6 +4709,38 @@
     rankingPage = 1;
     renderRankingTable();
   });
+
+  // ------------------------------------------------------------------
+  // Filter Kelas: tombol Prev/Next di samping dropdown
+  // ------------------------------------------------------------------
+  // Menghubungkan tombol "‹" / "›" ke sebuah <select> kelas supaya kelas
+  // bisa dipindah satu per satu, selain tetap bisa langsung dipilih lewat
+  // dropdown-nya. Berputar (cyclic): dari kelas terakhir "next" akan
+  // kembali ke kelas pertama, begitu juga sebaliknya.
+  function wireKelasPrevNext(selectId, prevId, nextId){
+    const sel = document.getElementById(selectId);
+    const prevBtn = document.getElementById(prevId);
+    const nextBtn = document.getElementById(nextId);
+    if(!sel || !prevBtn || !nextBtn) return;
+
+    function step(dir){
+      const total = sel.options.length;
+      if(total === 0) return;
+      const idx = (sel.selectedIndex + dir + total) % total;
+      if(idx === sel.selectedIndex) return;
+      sel.selectedIndex = idx;
+      sel.dispatchEvent(new Event('change'));
+    }
+
+    prevBtn.addEventListener('click', ()=> step(-1));
+    nextBtn.addEventListener('click', ()=> step(1));
+  }
+
+  wireKelasPrevNext('guru-harian-class-tabs', 'guru-harian-class-prev', 'guru-harian-class-next');
+  wireKelasPrevNext('guru-bulanan-class-tabs', 'guru-bulanan-class-prev', 'guru-bulanan-class-next');
+  wireKelasPrevNext('guru-siswa-class-tabs', 'guru-siswa-class-prev', 'guru-siswa-class-next');
+  wireKelasPrevNext('admin-rekap-harian-class-tabs', 'admin-rekap-harian-class-prev', 'admin-rekap-harian-class-next');
+  wireKelasPrevNext('admin-rekap-bulanan-class-tabs', 'admin-rekap-bulanan-class-prev', 'admin-rekap-bulanan-class-next');
 
   // ------------------------------------------------------------------
   // Boot
