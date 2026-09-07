@@ -1637,7 +1637,7 @@
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('full_name, role, kelas')
+      .select('full_name, role, kelas, jabatan')
       .eq('id', session.user.id)
       .single();
 
@@ -2888,6 +2888,16 @@
   let siswaSelectedTanggal = todayIso();
   let siswaSelectedBulan = null; // "YYYY-MM" — bulan yang sedang dilihat siswa
 
+  // Hanya siswa dengan jabatan "petugas" yang boleh mengisi/mengubah ceklis.
+  // Siswa biasa yang login tetap bisa melihat daftar kegiatan & roster kelasnya
+  // (read-only), tapi tombol tandai/simpan/reset disembunyikan & dinonaktifkan.
+  // Ini hanya penguat di tampilan — pembatas yang sesungguhnya tetap RLS
+  // "ceklis_write"/"ceklis_update" di server (lihat schema.sql), jadi siswa
+  // biasa tidak bisa menulis ceklis meski mencoba melewati tampilan ini.
+  function isPetugasCeklis(){
+    return !!currentUser && currentUser.role === 'siswa' && currentUser.jabatan === 'petugas';
+  }
+
   // Kunci bulan (YYYY-MM) dari tanggal mulai sebuah kegiatan.
   function bulanKeyOf(k){ return (k.tanggal_mulai || '').slice(0,7); }
   function labelBulan(key){
@@ -2981,7 +2991,12 @@
         const petugasKelas = profilesData
           .filter(p=>p.role==='siswa' && p.kelas===currentUser.kelas && p.jabatan==='petugas')
           .map(p=>p.full_name);
-        if(petugasKelas.length){
+        if(!isPetugasCeklis()){
+          detailPetugas.innerHTML = petugasKelas.length
+            ? `🔒 Hanya <strong>${petugasKelas.map(esc).join(', ')}</strong> (petugas ceklis kelas ini) yang bisa mengisi ceklis. Anda bisa melihat statusnya di sini.`
+            : `🔒 Belum ada siswa yang ditugaskan sebagai petugas ceklis di kelas ini, jadi ceklis belum bisa diisi.`;
+          detailPetugas.style.display = '';
+        } else if(petugasKelas.length){
           detailPetugas.innerHTML = `<strong>Petugas hari ini:</strong> ${petugasKelas.map(esc).join(', ')}`;
           detailPetugas.style.display = '';
         } else {
@@ -3057,6 +3072,7 @@
     const statusBySiswa = {};
     rows.filter(r=>r.tanggal === siswaSelectedTanggal).forEach(r=>{ statusBySiswa[r.siswa_id] = r.status; });
     const ceklisDraft = loadCeklisDraft();
+    const bolehIsi = isPetugasCeklis();
 
     rosterKelasSiswa.forEach((s,i)=>{
       const row = document.createElement('div');
@@ -3067,9 +3083,9 @@
         <span class="name">${s.full_name}</span>
         <span class="print-status"></span>
         <div class="status-group">
-          <button class="status-btn" data-status="hadir">Mengerjakan</button>
-          <button class="status-btn" data-status="tidak">Tidak Mengerjakan</button>
-          <select class="status-select">
+          <button class="status-btn" data-status="hadir" ${bolehIsi?'':'disabled'}>Mengerjakan</button>
+          <button class="status-btn" data-status="tidak" ${bolehIsi?'':'disabled'}>Tidak Mengerjakan</button>
+          <select class="status-select" ${bolehIsi?'':'disabled'}>
             <option value="">Izin lainnya…</option>
             <option value="sakit">Sakit</option>
             <option value="ijin">Ijin</option>
@@ -3101,6 +3117,12 @@
       sel.addEventListener('change',()=>setState(null, sel.value || null));
       rosterEl.appendChild(row);
     });
+    // Tombol simpan/reset hanya untuk petugas ceklis — siswa biasa hanya
+    // melihat roster & status (read-only), sesuai batas yang sama dengan RLS.
+    const simpanBtn = document.querySelector('#siswa-detail .save-bar-actions .pill-btn.solid');
+    const resetBtn = document.getElementById('reset-siswa');
+    if(simpanBtn) simpanBtn.style.display = bolehIsi ? '' : 'none';
+    if(resetBtn) resetBtn.style.display = bolehIsi ? '' : 'none';
     updateSaveBarInfo();
   }
 
@@ -3116,6 +3138,7 @@
   rosterEl.addEventListener('change', updateSaveBarInfo);
 
   document.querySelector('#siswa-detail .save-bar-actions .pill-btn.solid').addEventListener('click', async ()=>{
+    if(!isPetugasCeklis()){ alert('Hanya petugas ceklis yang bisa mengisi/menyimpan ceklis kelas ini.'); return; }
     if(!siswaActiveKegiatan){ alert('Pilih kegiatan literasi dulu.'); return; }
     const rows = [...document.querySelectorAll('#roster-list .roster-row')]
       .filter(r=>r.dataset.currentStatus)
@@ -3152,6 +3175,7 @@
   });
 
   document.getElementById('reset-siswa').addEventListener('click', ()=>{
+    if(!isPetugasCeklis()){ alert('Hanya petugas ceklis yang bisa mereset ceklis kelas ini.'); return; }
     if(!siswaActiveKegiatan){ alert('Pilih kegiatan literasi dulu.'); return; }
     const rowsAda = document.querySelectorAll('#roster-list .roster-row').length > 0;
     if(!rowsAda){ alert('Belum ada data siswa untuk direset.'); return; }
