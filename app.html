@@ -205,9 +205,11 @@
     align-items:center;
     gap:6px;
     transition:border-color .15s ease, color .15s ease;
-    /* Melayang mepet ke tepi kanan LAYAR (viewport), posisi vertikal (top)
-       diatur lewat JS supaya sejajar dengan baris menu tab yang sedang
-       tampil (lihat fungsi positionReloadBtn). */
+    /* Melayang mepet ke tepi kanan LAYAR (viewport). Posisi (top & right)
+       diatur lewat JS supaya "nangkring" tepat di atas tabel yang sedang
+       tampil, sejajar dengan sisi kanan tabel tsb — bukan di dekat
+       masthead/tombol Keluar yang ramai sehingga kurang terlihat
+       (lihat fungsi positionReloadBtn). */
     position:fixed;
     top:24px;
     right:20px;
@@ -5066,28 +5068,39 @@
   }
 
   // ------------------------------------------------------------------
-  // Sejajarkan tombol "Muat Ulang" (yang posisinya fixed, mepet ke tepi
-  // kanan layar) secara vertikal dengan baris menu tab utama yang sedang
-  // tampil sesuai role: admin -> #admin-main-tabs, guru -> #guru-main-tabs.
-  // Kalau tidak ada baris menu tab (mis. siswa), jatuhkan ke posisi
-  // sejajar masthead sebagai fallback.
+  // Posisikan tombol "Muat Ulang" (fixed) supaya "nangkring" tepat di
+  // atas tabel yang sedang tampil di layar, rata dengan sisi kanan
+  // tabel tsb. Dulu tombol ini disejajarkan dengan baris menu tab di
+  // dekat masthead/tombol Keluar — jadi kurang terlihat karena berdesakan
+  // dengan elemen lain di sana. Sekarang tombol mengikuti tabel mana pun
+  // yang sedang aktif (rekap, daftar user, kelas, kegiatan, ranking, dll),
+  // baik untuk admin maupun guru.
+  //
+  // Kalau tidak ada tabel yang tampil (mis. tampilan siswa yang memakai
+  // daftar kartu, bukan tabel), jatuhkan ke posisi sejajar judul panel
+  // yang sedang aktif, lalu masthead sebagai fallback terakhir.
+  // Posisi selalu dijaga minimal 12px dari tepi atas/kanan layar supaya
+  // saat halaman discroll ke bawah (tabel keluar dari layar bagian atas),
+  // tombol tidak ikut hilang / terlempar ke luar viewport.
   // ------------------------------------------------------------------
   function positionReloadBtn(){
     if(!reloadBtn) return;
     let target = null;
-    if(currentUser?.role === 'admin'){
-      target = document.getElementById('admin-main-tabs');
-    } else if(currentUser?.role === 'guru'){
-      target = document.getElementById('guru-main-tabs');
+    const tables = document.querySelectorAll('.app table');
+    for(const t of tables){
+      if(t.offsetParent !== null){ target = t; break; }
     }
-    if(!target || target.offsetParent === null){
-      target = document.querySelector('.masthead');
+    if(!target){
+      target = document.querySelector('.panel.active .panel-head')
+            || document.querySelector('.masthead');
     }
     if(!target) return;
     const rect = target.getBoundingClientRect();
     const btnHeight = reloadBtn.offsetHeight || 36;
-    const top = rect.top + (rect.height / 2) - (btnHeight / 2);
+    const top = rect.top - btnHeight - 10;
+    const right = window.innerWidth - rect.right;
     reloadBtn.style.top = Math.max(12, Math.round(top)) + 'px';
+    reloadBtn.style.right = Math.max(12, Math.round(right)) + 'px';
   }
   window.addEventListener('resize', ()=> positionReloadBtn());
   let reloadBtnScrollRaf = null;
