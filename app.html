@@ -3964,11 +3964,11 @@
   // (tidak lagi memakai window.print(), jadi hasilnya konsisten di semua
   // browser/perangkat dan tidak tergantung dialog cetak sistem operasi.)
   // ------------------------------------------------------------------
-  const PDF_COVER = [46, 107, 91];       // --cover
-  const PDF_INK = [33, 31, 27];          // --ink
-  const PDF_INK_SOFT = [116, 108, 94];   // --ink-soft
-  const PDF_INK_FAINT = [167, 158, 140]; // --ink-faint
-  const PDF_ROW_SHADE = [246, 243, 236]; // --paper
+  const PDF_COVER = [56, 132, 200];      // --cover (biru muda)
+  const PDF_INK = [27, 42, 60];          // --ink (biru tua keabuan)
+  const PDF_INK_SOFT = [80, 104, 130];   // --ink-soft
+  const PDF_INK_FAINT = [148, 175, 201]; // --ink-faint
+  const PDF_ROW_SHADE = [232, 242, 251]; // --paper (biru sangat muda)
 
   function buildA4Pdf({ suffix, docTitle, metaLines, columns, columnStyles, rows, filename, signature = true }){
     if(!rows || rows.length === 0){ alert('Tidak ada data untuk diekspor.'); return; }
@@ -4008,9 +4008,12 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9.5);
     doc.setTextColor(...PDF_INK_SOFT);
-    metaLines.forEach(line=>{ doc.text(line, marginX, y); y += 5; });
+    metaLines.forEach(line=>{
+      const wrapped = doc.splitTextToSize(line, pageWidth - marginX * 2);
+      wrapped.forEach(wLine=>{ doc.text(wLine, marginX, y); y += 5; });
+    });
     y += 2;
-    doc.setDrawColor(230, 224, 210);
+    doc.setDrawColor(200, 222, 240);
     doc.line(marginX, y, pageWidth - marginX, y);
     y += 5;
     const contentStartY = y;
@@ -4141,15 +4144,22 @@
     if(!kelas){ alert('Pilih kelas dulu.'); return; }
     if(!guruActiveKegiatan){ alert('Tidak ada kegiatan literasi pada tanggal ini.'); return; }
     const kegiatanJudul = guruActiveKegiatan.judul;
+    const kegiatanDeskripsi = (guruActiveKegiatan.deskripsi || '').trim();
+    const petugasKelas = profilesData
+      .filter(p=>p.role==='siswa' && p.kelas===kelas && p.jabatan==='petugas')
+      .map(p=>p.full_name);
     const rows = domRowsToArray(recapBody);
+    const metaLines = [
+      `Kelas: ${kelas}`,
+      `Kegiatan: ${kegiatanJudul}`,
+    ];
+    if(kegiatanDeskripsi){ metaLines.push(`Deskripsi: ${kegiatanDeskripsi}`); }
+    metaLines.push(`Tanggal: ${fmtTanggalIndo(currentGuruTanggal())}`);
+    metaLines.push(`Petugas Ceklis: ${petugasKelas.length ? petugasKelas.join(', ') : 'Belum ada petugas ceklis'}`);
     buildA4Pdf({
       suffix: 'harian',
       docTitle: 'Rekap Harian Literasi',
-      metaLines: [
-        `Kelas: ${kelas}`,
-        `Kegiatan: ${kegiatanJudul}`,
-        `Tanggal: ${fmtTanggalIndo(currentGuruTanggal())}`,
-      ],
+      metaLines,
       columns: COLS_ROSTER,
       columnStyles: COLSTYLE_ROSTER,
       rows,
