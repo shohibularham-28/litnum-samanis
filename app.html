@@ -191,6 +191,26 @@
     transition:border-color .15s ease, color .15s ease;
   }
   .logout-btn:hover{border-color:var(--clay); color:var(--clay);}
+  .reload-btn{
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .reload-btn:hover{border-color:var(--cover); color:var(--cover);}
+  .reload-btn:disabled{opacity:.55; cursor:default;}
+  .reload-btn .reload-icon{display:inline-block; transition:transform .5s ease;}
+  .reload-btn.spinning .reload-icon{animation:reload-spin .6s linear infinite;}
+  @keyframes reload-spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
   /* Role switcher (segmented control) */
   .role-tabs{
@@ -1079,6 +1099,10 @@
           <span class="user-role" id="user-role-label">—</span>
         </div>
       </div>
+      <button class="reload-btn" id="reload-btn" title="Muat ulang data">
+        <span class="reload-icon">🔄</span>
+        <span class="reload-label">Muat Ulang</span>
+      </button>
       <button class="logout-btn" id="logout-btn" title="Keluar">Keluar</button>
     </div>
   </div>
@@ -2996,6 +3020,8 @@
       document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
       t.classList.add('active');
       document.getElementById('admin-'+t.dataset.admin).classList.add('active');
+      // Simpan tab yang aktif supaya tetap di tab yang sama walau halaman di-refresh.
+      localStorage.setItem('activeAdminTab', t.dataset.admin);
     });
   });
 
@@ -4507,6 +4533,7 @@
       document.querySelectorAll('.rekap-subpanel').forEach(p=>p.classList.remove('active'));
       t.classList.add('active');
       document.getElementById('admin-rekap-'+t.dataset.rekapview).classList.add('active');
+      localStorage.setItem('activeRekapSubtab', t.dataset.rekapview);
     });
   });
 
@@ -4517,8 +4544,37 @@
       document.querySelectorAll('.guru-subpanel').forEach(p=>p.classList.remove('active'));
       t.classList.add('active');
       document.getElementById('guru-'+t.dataset.guruview).classList.add('active');
+      localStorage.setItem('activeGuruSubtab', t.dataset.guruview);
     });
   });
+
+  // ------------------------------------------------------------------
+  // Pulihkan tab yang terakhir aktif (dipanggil sekali saat boot, setelah
+  // panel sesuai role selesai dirender) supaya refresh halaman tidak
+  // melempar user kembali ke tab pertama (mis. dari "Rekap" balik ke
+  // "Pengguna").
+  // ------------------------------------------------------------------
+  function restoreActiveTabs(){
+    if(currentUser?.role === 'admin'){
+      const savedAdminTab = localStorage.getItem('activeAdminTab');
+      if(savedAdminTab){
+        const tabEl = document.querySelector(`.admin-tab[data-admin="${savedAdminTab}"]`);
+        if(tabEl) tabEl.click();
+      }
+      const savedRekapSubtab = localStorage.getItem('activeRekapSubtab');
+      if(savedRekapSubtab){
+        const subtabEl = document.querySelector(`.rekap-subtab[data-rekapview="${savedRekapSubtab}"]`);
+        if(subtabEl) subtabEl.click();
+      }
+    }
+    if(currentUser?.role === 'guru'){
+      const savedGuruSubtab = localStorage.getItem('activeGuruSubtab');
+      if(savedGuruSubtab){
+        const subtabEl = document.querySelector(`.guru-subtab[data-guruview="${savedGuruSubtab}"]`);
+        if(subtabEl) subtabEl.click();
+      }
+    }
+  }
 
   // ------------------------------------------------------------------
   // Unduh PDF — desain sendiri, dijamin muat dalam satu halaman A4
@@ -4941,12 +4997,11 @@
   wireKelasPrevNext('user-filter-kelas', 'user-filter-kelas-prev', 'user-filter-kelas-next');
 
   // ------------------------------------------------------------------
-  // Boot
+  // Muat ulang data dari server tanpa reload halaman (supaya tab yang
+  // sedang aktif tidak berubah sama sekali). Dipakai baik saat boot
+  // pertama kali maupun saat tombol "Muat Ulang" diklik manual.
   // ------------------------------------------------------------------
-  (async function boot(){
-    const ok = await initAuthGuard();
-    if(!ok) return;
-
+  async function loadAppData(){
     await Promise.all([loadProfiles(), loadKelas(), loadKegiatan()]);
 
     refreshSignaturesForCurrentClasses();
@@ -4970,6 +5025,37 @@
     }
     if(currentUser.role === 'siswa'){
       document.getElementById('siswa-class-badge').textContent = currentUser.kelas ? `Kelas ${currentUser.kelas}` : 'Belum ada data kelas';
+    }
+  }
+
+  const reloadBtn = document.getElementById('reload-btn');
+  if(reloadBtn){
+    reloadBtn.addEventListener('click', async ()=>{
+      if(reloadBtn.disabled) return;
+      reloadBtn.disabled = true;
+      reloadBtn.classList.add('spinning');
+      try {
+        await loadAppData();
+      } catch(err){
+        console.error('Gagal memuat ulang data:', err);
+        alert('Gagal memuat ulang data. Coba lagi.');
+      } finally {
+        reloadBtn.disabled = false;
+        reloadBtn.classList.remove('spinning');
+      }
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Boot
+  // ------------------------------------------------------------------
+  (async function boot(){
+    const ok = await initAuthGuard();
+    if(!ok) return;
+
+    await loadAppData();
+
+    if(currentUser.role === 'siswa'){
       // Kegiatan yang tadinya terkunci harus otomatis "terbuka" begitu jam
       // buka tercapai, tanpa siswa perlu memuat ulang halaman.
       setInterval(()=>{
@@ -4977,6 +5063,10 @@
         if(siswaList.classList.contains('active')) renderKegiatanList();
       }, 30000);
     }
+
+    // Pulihkan tab terakhir yang dibuka sebelum refresh (lihat definisi
+    // restoreActiveTabs di atas).
+    restoreActiveTabs();
   })();
 </script>
 </body>
