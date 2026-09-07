@@ -86,6 +86,52 @@ alter table public.ceklis add constraint ceklis_kegiatan_id_fkey
 create index if not exists ceklis_kelas_tanggal_idx on public.ceklis (kelas, tanggal);
 create index if not exists ceklis_kegiatan_idx on public.ceklis (kegiatan_id);
 
+-- Ganti aturan "satu ceklisan yang sama" dari (kegiatan_id, siswa_id, tanggal)
+-- menjadi (siswa_id, tanggal) saja. Sebelumnya, kalau kegiatan_id yang aktif
+-- berbeda antara ceklis pertama & kedua di tanggal yang sama, upsert dari
+-- petugas dianggap 2 baris berbeda (bukan menimpa) — padahal Rekap Harian
+-- guru membaca data berdasarkan kelas+tanggal saja, jadi keduanya tetap
+-- muncul dobel. Aman dijalankan berkali-kali.
+
+-- 1) Bersihkan duplikat siswa+tanggal yang sudah kadung tersimpan sebelum
+--    constraint baru ditambahkan (constraint akan gagal dibuat kalau masih
+--    ada duplikat). Menyisakan baris yang paling baru diubah per siswa+tanggal.
+delete from public.ceklis a
+using public.ceklis b
+where a.siswa_id = b.siswa_id
+  and a.tanggal = b.tanggal
+  and (a.updated_at, a.id) < (b.updated_at, b.id);
+
+-- 2) Lepas constraint unique lama (kegiatan_id, siswa_id, tanggal), apa pun
+--    nama constraint-nya di database ini.
+do $$
+declare
+  conname text;
+begin
+  select tc.constraint_name into conname
+  from information_schema.table_constraints tc
+  join information_schema.key_column_usage kcu
+    on tc.constraint_name = kcu.constraint_name and tc.table_schema = kcu.table_schema
+  where tc.table_schema = 'public' and tc.table_name = 'ceklis' and tc.constraint_type = 'UNIQUE'
+  group by tc.constraint_name
+  having array_agg(kcu.column_name order by kcu.ordinal_position) = array['kegiatan_id','siswa_id','tanggal'];
+
+  if conname is not null then
+    execute format('alter table public.ceklis drop constraint %I', conname);
+  end if;
+end $$;
+
+-- 3) Pasang constraint unique baru (siswa_id, tanggal).
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.table_constraints
+    where table_schema = 'public' and table_name = 'ceklis' and constraint_name = 'ceklis_siswa_id_tanggal_key'
+  ) then
+    alter table public.ceklis add constraint ceklis_siswa_id_tanggal_key unique (siswa_id, tanggal);
+  end if;
+end $$;
+
 -- ============================================================
 -- Helper: cek peran pengguna yang sedang login (dipakai di RLS)
 -- ============================================================
