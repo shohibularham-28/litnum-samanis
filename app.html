@@ -603,7 +603,7 @@
     border:1px solid transparent;
   }
   .badge.hadir{background:var(--cover-soft); color:var(--cover-dark);}
-  .badge.tidak{background:var(--clay-soft); color:var(--clay);}
+  .badge.tidak{background:#FDE2E1; color:#C81E1E; font-weight:700;}
   .badge.izin{background:var(--amber-soft); color:var(--amber);}
   .edit-hint{font-size:11px; color:var(--ink-faint); margin-top:12px;}
   .empty-state{
@@ -1402,8 +1402,15 @@
         <button class="pill-btn solid">Simpan</button>
       </div>
 
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <button class="pill-btn danger-outline" id="delete-selected-btn-kelas" disabled>Hapus Terpilih (0)</button>
+      </div>
       <table class="recap-table">
-        <thead><tr><th>Kelas</th><th>Wali Kelas</th><th>Petugas Ceklis</th><th>Jumlah Siswa</th><th>Aksi</th></tr></thead>
+        <thead><tr>
+          <th class="checkbox-col"><input type="checkbox" id="kelas-select-all"></th>
+          <th class="no-col">No</th>
+          <th>Kelas</th><th>Wali Kelas</th><th>Petugas Ceklis</th><th>Jumlah Siswa</th><th>Aksi</th>
+        </tr></thead>
         <tbody id="kelas-body"></tbody>
       </table>
     </div>
@@ -2417,20 +2424,41 @@
   // ADMIN: Kelas
   // ------------------------------------------------------------------
   const kelasBody = document.getElementById('kelas-body');
+  let selectedKelasIds = new Set();
+
+  function updateDeleteSelectedKelasBtn(){
+    const btn = document.getElementById('delete-selected-btn-kelas');
+    if(!btn) return;
+    btn.textContent = `Hapus Terpilih (${selectedKelasIds.size})`;
+    btn.disabled = selectedKelasIds.size === 0;
+  }
+
   function renderKelasTable(){
     kelasBody.innerHTML = "";
+    selectedKelasIds = new Set();
+    const selectAllCb = document.getElementById('kelas-select-all');
+    if(selectAllCb) selectAllCb.checked = false;
+    updateDeleteSelectedKelasBtn();
     if(kelasData.length === 0){
-      kelasBody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada kelas. Tambahkan lewat tombol "+ Tambah Kelas".</td></tr>';
+      kelasBody.innerHTML = '<tr><td colspan="7" class="empty-state">Belum ada kelas. Tambahkan lewat tombol "+ Tambah Kelas".</td></tr>';
       return;
     }
-    kelasData.forEach(k=>{
+    kelasData.forEach((k,i)=>{
       const jumlahSiswa = profilesData.filter(p=>p.role==='siswa' && p.kelas===k.nama).length;
       const petugas = profilesData.filter(p=>p.role==='siswa' && p.kelas===k.nama && p.jabatan==='petugas').map(p=>p.full_name);
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${k.nama}</td><td>${k.wali?.full_name || "— (belum ada wali)"}</td>
+      tr.innerHTML = `<td class="checkbox-col"><input type="checkbox" class="kelas-row-checkbox" data-id="${k.id}"></td>
+        <td class="no-col">${i+1}</td>
+        <td>${k.nama}</td><td>${k.wali?.full_name || "— (belum ada wali)"}</td>
         <td>${petugas.length ? petugas.join(', ') : "— (belum ada petugas)"}</td><td>${jumlahSiswa}</td>
         <td class="row-actions"><button class="link-btn" data-edit-kelas="${k.id}">Edit</button><button class="link-btn danger" data-del-kelas="${k.id}">Hapus</button></td>`;
       kelasBody.appendChild(tr);
+    });
+    kelasBody.querySelectorAll('.kelas-row-checkbox').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        if(cb.checked) selectedKelasIds.add(cb.dataset.id); else selectedKelasIds.delete(cb.dataset.id);
+        updateDeleteSelectedKelasBtn();
+      });
     });
     kelasBody.querySelectorAll('[data-edit-kelas]').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
@@ -2489,6 +2517,32 @@
       });
     });
   }
+
+  document.getElementById('kelas-select-all').addEventListener('change', (e)=>{
+    const checked = e.target.checked;
+    kelasBody.querySelectorAll('.kelas-row-checkbox').forEach(cb=>{
+      cb.checked = checked;
+      if(checked) selectedKelasIds.add(cb.dataset.id); else selectedKelasIds.delete(cb.dataset.id);
+    });
+    updateDeleteSelectedKelasBtn();
+  });
+
+  document.getElementById('delete-selected-btn-kelas').addEventListener('click', async ()=>{
+    if(selectedKelasIds.size === 0) return;
+    const ids = Array.from(selectedKelasIds);
+    if(!confirm(`Hapus ${ids.length} kelas terpilih? Tindakan tidak bisa dibatalkan.`)) return;
+    const btn = document.getElementById('delete-selected-btn-kelas');
+    btn.disabled = true; btn.textContent = 'Menghapus…';
+    const { error } = await supabase.from('kelas').delete().in('id', ids);
+    if(error){
+      alert('Gagal menghapus kelas terpilih: ' + error.message);
+      btn.disabled = false;
+      updateDeleteSelectedKelasBtn();
+      return;
+    }
+    await refreshAdminData();
+    alert(`Berhasil menghapus ${ids.length} kelas terpilih.`);
+  });
 
   document.getElementById('toggle-add-kelas').addEventListener('click',()=>{
     document.getElementById('add-form-kelas').classList.toggle('open');
