@@ -114,7 +114,7 @@ begin
     on tc.constraint_name = kcu.constraint_name and tc.table_schema = kcu.table_schema
   where tc.table_schema = 'public' and tc.table_name = 'ceklis' and tc.constraint_type = 'UNIQUE'
   group by tc.constraint_name
-  having array_agg(kcu.column_name order by kcu.ordinal_position) = array['kegiatan_id','siswa_id','tanggal'];
+  having array_agg(kcu.column_name::text order by kcu.ordinal_position) = array['kegiatan_id','siswa_id','tanggal'];
 
   if conname is not null then
     execute format('alter table public.ceklis drop constraint %I', conname);
