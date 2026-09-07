@@ -63,7 +63,7 @@ alter table public.kegiatan add column if not exists deskripsi text;
 -- Satu baris per (kegiatan, siswa, tanggal)
 create table if not exists public.ceklis (
   id uuid primary key default gen_random_uuid(),
-  kegiatan_id uuid not null references public.kegiatan(id) on delete cascade,
+  kegiatan_id uuid references public.kegiatan(id) on delete set null,
   kelas text not null,
   siswa_id uuid not null references public.profiles(id) on delete cascade,
   tanggal date not null,
@@ -72,6 +72,16 @@ create table if not exists public.ceklis (
   updated_at timestamptz not null default now(),
   unique (kegiatan_id, siswa_id, tanggal)
 );
+
+-- Kalau tabel ceklis sudah ada dari sebelumnya dengan kegiatan_id yang
+-- "NOT NULL ... ON DELETE CASCADE", ubah jadi "nullable ... ON DELETE SET
+-- NULL" supaya menghapus kegiatan TIDAK ikut menghapus rekap ceklis yang
+-- sudah tercatat — baris ceklis tetap ada, hanya tautan ke kegiatan yang
+-- sudah dihapus itu dikosongkan. Aman dijalankan berkali-kali.
+alter table public.ceklis alter column kegiatan_id drop not null;
+alter table public.ceklis drop constraint if exists ceklis_kegiatan_id_fkey;
+alter table public.ceklis add constraint ceklis_kegiatan_id_fkey
+  foreign key (kegiatan_id) references public.kegiatan(id) on delete set null;
 
 create index if not exists ceklis_kelas_tanggal_idx on public.ceklis (kelas, tanggal);
 create index if not exists ceklis_kegiatan_idx on public.ceklis (kegiatan_id);

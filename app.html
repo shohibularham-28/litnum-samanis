@@ -1413,6 +1413,7 @@
         <div class="sub">Pengumuman ini akan muncul di dashboard petugas. Petugas memilih salah satu kegiatan untuk mulai mengisi kalender &amp; ceklis.</div>
         <button class="pill-btn solid" id="toggle-add-kegiatan">+ Tambah Kegiatan</button>
       </div>
+      <div class="edit-hint" style="margin-top:-6px; margin-bottom:14px;">ℹ️ Menghapus kegiatan hanya menghapus pengumumannya — data ceklis/rekap yang sudah tercatat untuk kegiatan tersebut tetap tersimpan dan tetap muncul di Rekap Bulanan &amp; Ranking.</div>
 
       <div class="add-form" id="add-form-kegiatan" style="grid-template-columns:1.3fr .8fr .6fr .8fr auto;">
         <input type="text" placeholder="Judul kegiatan (mis. Tantangan Baca Buku)">
@@ -1723,6 +1724,18 @@
     if(error){ console.error(error); return []; }
     ceklisCache[key] = data || [];
     return ceklisCache[key];
+  }
+  // Ambil ceklis langsung berdasarkan kelas & tanggal (TIDAK lewat kegiatan_id).
+  // Dipakai untuk Rekap Harian supaya rekap tetap tampil walau kegiatan yang
+  // dulu menaunginya sudah dihapus admin — datanya sendiri tidak pernah ikut
+  // terhapus (lihat schema.sql: ceklis.kegiatan_id ON DELETE SET NULL).
+  async function loadCeklisByTanggal(kelas, tanggal){
+    if(!kelas || !tanggal) return [];
+    const { data, error } = await supabase.from('ceklis')
+      .select('*, siswa:siswa_id(full_name)')
+      .eq('kelas', kelas).eq('tanggal', tanggal);
+    if(error){ console.error(error); return []; }
+    return data || [];
   }
 
   // ------------------------------------------------------------------
@@ -2675,7 +2688,7 @@
     });
     kegiatanAdminBody.querySelectorAll('[data-del-k]').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
-        if(!confirm('Hapus kegiatan ini? Data ceklis terkait akan ikut terhapus.')) return;
+        if(!confirm('Hapus kegiatan ini?\n\nCatatan: data ceklis/rekap yang sudah tercatat untuk kegiatan ini TIDAK akan ikut terhapus dan tetap bisa dilihat di Rekap Bulanan/Ranking — hanya pengumuman kegiatannya yang dihapus.')) return;
         const { error } = await supabase.from('kegiatan').delete().eq('id', btn.dataset.delK);
         if(error){ alert(error.message); return; }
         await refreshAdminData();
@@ -3073,7 +3086,7 @@
       harianWrap.innerHTML = emptyMsg;
       bulananWrap.innerHTML = emptyMsg;
       siswaWrap.innerHTML = emptyMsg;
-      renderRecap(null); updateGuruHarianCaption(); renderBulanan(null); renderSiswaKelola(null);
+      renderRecap(null); renderBulanan(null); renderSiswaKelola(null);
       return;
     }
 
@@ -3087,7 +3100,6 @@
 
     harianWrap.addEventListener('change', async ()=>{
       await renderRecap(harianWrap.value);
-      updateGuruHarianCaption();
     });
     bulananWrap.addEventListener('change', async ()=>{
       await renderBulanan(bulananWrap.value);
@@ -3097,7 +3109,6 @@
     });
 
     renderRecap(namaKelasWali[0]);
-    updateGuruHarianCaption();
     renderBulanan(namaKelasWali[0]);
     renderSiswaKelola(namaKelasWali[0]);
   }
@@ -3169,7 +3180,6 @@
     updateGuruKegiatanDisplay();
     const kelasSel = document.getElementById('guru-harian-class-tabs');
     await renderRecap(kelasSel ? kelasSel.value : null);
-    updateGuruHarianCaption();
   });
 
   function currentGuruTanggal(){
@@ -3215,20 +3225,25 @@
   async function renderRecap(kelas){
     recapBody.innerHTML = "";
     updateGuruPetugasDisplay(kelas);
-    const kegiatanId = guruActiveKegiatan ? guruActiveKegiatan.id : null;
-    if(!kelas || !kegiatanId){
-      recapBody.innerHTML = kelas
-        ? '<tr><td colspan="3" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>'
-        : '<tr><td colspan="3" class="empty-state">Pilih kelas untuk melihat ceklis.</td></tr>';
+    if(!kelas){
+      recapBody.innerHTML = '<tr><td colspan="3" class="empty-state">Pilih kelas untuk melihat ceklis.</td></tr>';
       updateGuruHarianStats(kelas, []);
+      recapCaption.innerHTML = 'Anda belum menjadi wali kelas manapun, sehingga belum ada rekap yang bisa ditampilkan.';
       return;
     }
     const tanggal = currentGuruTanggal();
-    const rows = await loadCeklis(kegiatanId, kelas);
-    const todays = rows.filter(r=>r.tanggal === tanggal);
+    // Ambil langsung by kelas+tanggal (bukan lewat kegiatan_id) supaya rekap
+    // tetap tampil walau kegiatan yang menaunginya sudah dihapus admin.
+    const todays = await loadCeklisByTanggal(kelas, tanggal);
     updateGuruHarianStats(kelas, todays);
+    const kegiatanJudul = guruActiveKegiatan ? guruActiveKegiatan.judul : null;
     if(todays.length === 0){
-      recapBody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data ceklis untuk kelas &amp; tanggal ini.</td></tr>';
+      recapBody.innerHTML = kegiatanJudul
+        ? '<tr><td colspan="3" class="empty-state">Belum ada data ceklis untuk kelas &amp; tanggal ini.</td></tr>'
+        : '<tr><td colspan="3" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>';
+      recapCaption.innerHTML = kegiatanJudul
+        ? `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`
+        : `Tidak ada kegiatan literasi pada tanggal ini · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
       return;
     }
     todays.forEach((r,i)=>{
@@ -3238,6 +3253,9 @@
         <td><span class="badge ${cycleClass}" data-id="${r.id}" data-status="${r.status}">${labelMap[r.status]}</span></td>`;
       recapBody.appendChild(tr);
     });
+    recapCaption.innerHTML = kegiatanJudul
+      ? `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`
+      : `<strong>⚠️ Kegiatan sudah dihapus</strong> (data tetap tersimpan) · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
   }
 
   const cycle = {hadir:"tidak", tidak:"izin", izin:"hadir", sakit:"hadir", alpha:"hadir", dispen:"hadir"};
@@ -3261,15 +3279,10 @@
   });
 
   function updateGuruHarianCaption(){
-    const kelasSel = document.getElementById('guru-harian-class-tabs');
-    if(!kelasSel || !kelasSel.value){
-      recapCaption.innerHTML = 'Anda belum menjadi wali kelas manapun, sehingga belum ada rekap yang bisa ditampilkan.';
-      return;
-    }
-    const kelas = kelasSel.value;
-    const tanggal = fmtTanggalIndo(currentGuruTanggal());
-    const kegiatanJudul = guruActiveKegiatan ? guruActiveKegiatan.judul : 'Tidak ada kegiatan';
-    recapCaption.innerHTML = `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${tanggal}</strong>`;
+    // Fungsi lama — caption Rekap Harian sekarang di-set langsung di dalam
+    // renderRecap() supaya urutan async selalu benar dan tetap akurat saat
+    // kegiatan sumbernya sudah dihapus admin. Dipertahankan sebagai no-op
+    // kalau ada pemanggilan lama yang tertinggal.
   }
 
   // ---- Guru: Kelola Siswa ----
@@ -3711,21 +3724,16 @@
     if(!adminRecapBody) return;
     adminRecapBody.innerHTML = "";
     updateAdminPetugasDisplay(kelasFilter);
-    const kegiatanId = adminActiveKegiatan ? adminActiveKegiatan.id : null;
     const tanggal = currentAdminHarianTanggal();
-    const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : '';
+    const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : null;
     const kelasLabel = (!kelasFilter || kelasFilter === ADMIN_ALL_KELAS) ? 'Semua Kelas' : `Kelas ${kelasFilter}`;
 
-    if(!kegiatanId){
-      adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>';
-      adminRecapCaption.innerHTML = 'Tidak ada kegiatan literasi pada tanggal ini.';
-      updateAdminHarianStats([]);
-      return;
-    }
-
-    const { data, error } = await supabase.from('ceklis')
-      .select('*, siswa:siswa_id(full_name)')
-      .eq('kegiatan_id', kegiatanId).eq('tanggal', tanggal);
+    // Ambil langsung by tanggal (bukan lewat kegiatan_id) supaya rekap tetap
+    // tampil walau kegiatan yang menaunginya sudah dihapus admin — data
+    // ceklis sendiri tidak pernah ikut terhapus (lihat schema.sql).
+    let query = supabase.from('ceklis').select('*, siswa:siswa_id(full_name)').eq('tanggal', tanggal);
+    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
+    const { data, error } = await query;
     if(error){
       console.error(error);
       adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Gagal memuat data.</td></tr>';
@@ -3733,16 +3741,24 @@
     }
 
     let rows = data || [];
-    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) rows = rows.filter(r=>r.kelas === kelasFilter);
     rows.sort((a,b)=> (a.kelas||'').localeCompare(b.kelas||'') || (a.siswa?.full_name||'').localeCompare(b.siswa?.full_name||''));
 
     updateAdminHarianStats(rows);
-    adminRecapCaption.innerHTML = `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>${kelasLabel}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
 
     if(rows.length === 0){
-      adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Belum ada data ceklis untuk filter ini.</td></tr>';
+      adminRecapBody.innerHTML = kegiatanJudul
+        ? '<tr><td colspan="4" class="empty-state">Belum ada data ceklis untuk filter ini.</td></tr>'
+        : '<tr><td colspan="4" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>';
+      adminRecapCaption.innerHTML = kegiatanJudul
+        ? `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>${kelasLabel}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`
+        : `Tidak ada kegiatan literasi pada tanggal ini · Menampilkan <strong>${kelasLabel}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
       return;
     }
+
+    adminRecapCaption.innerHTML = kegiatanJudul
+      ? `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>${kelasLabel}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`
+      : `<strong>⚠️ Kegiatan sudah dihapus</strong> (data tetap tersimpan) · Menampilkan <strong>${kelasLabel}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
+
     rows.forEach((r,i)=>{
       const tr = document.createElement('tr');
       const cycleClass = ['sakit','ijin','alpha','dispen'].includes(r.status) ? 'izin' : r.status;
