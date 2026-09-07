@@ -201,19 +201,18 @@
     background:var(--card);
     color:var(--ink-soft);
     cursor:pointer;
-    display:flex;
+    display:inline-flex;
     align-items:center;
     gap:6px;
     transition:border-color .15s ease, color .15s ease;
-    /* Melayang mepet ke tepi kanan LAYAR (viewport). Posisi (top & right)
-       diatur lewat JS supaya "nangkring" tepat di atas tabel yang sedang
-       tampil, sejajar dengan sisi kanan tabel tsb — bukan di dekat
-       masthead/tombol Keluar yang ramai sehingga kurang terlihat
-       (lihat fungsi positionReloadBtn). */
-    position:fixed;
-    top:24px;
-    right:20px;
-    z-index:40;
+    /* Sekarang ikut alur dokumen (bukan position:fixed lagi): tombol ini
+       dipindahkan lewat JS (lihat fungsi positionReloadBtn) supaya jadi
+       anak terakhir dari baris menu tab yang sedang tampil (admin-main-tabs
+       / guru-main-tabs), lalu margin-left:auto mendorongnya mepet ke ujung
+       kanan baris tab tersebut — sejajar & di samping tombol tab paling
+       kanan, bukan lagi melayang mepet ke tepi layar. */
+    margin-left:auto;
+    flex-shrink:0;
     box-shadow:0 2px 8px rgba(27,42,60,.08);
   }
   .reload-btn:hover{border-color:var(--cover); color:var(--cover);}
@@ -821,6 +820,7 @@
   /* ===== ADMIN VIEW ===== */
   .admin-tabs{
     display:flex;
+    align-items:center;
     gap:6px;
     margin-bottom:20px;
     overflow-x:auto;
@@ -1043,7 +1043,7 @@
     .masthead-right{width:100%; justify-content:space-between;}
     .user-meta{display:none;}
     .user-chip{padding:6px;}
-    .reload-btn{right:8px; padding:8px 10px;}
+    .reload-btn{padding:8px 10px;}
     .reload-btn .reload-label{display:none;}
 
     .panel{padding:16px;}
@@ -1122,12 +1122,12 @@
   </div>
   <div class="role-note" id="role-note">Tampilan mengikuti peran akun yang sedang masuk.</div>
 
-  <!-- Tombol Muat Ulang: posisinya "melayang" (position:fixed), sejajar
-       secara vertikal dengan baris menu tab (admin-main-tabs / guru-main-tabs),
-       tapi horizontalnya selalu mepet ke tepi kanan LAYAR (viewport), bukan
-       cuma tepi kanan konten yang lebar maksimalnya 1000px. Posisi vertikalnya
-       dihitung ulang lewat JS (lihat positionReloadBtn) supaya selalu sejajar
-       dengan tab yang sedang tampil sesuai role user. -->
+  <!-- Tombol Muat Ulang: elemennya didefinisikan di sini, tapi lewat JS
+       (lihat fungsi positionReloadBtn) akan DIPINDAHKAN menjadi anak
+       terakhir dari baris menu tab yang sedang tampil sesuai role user
+       (admin-main-tabs / guru-main-tabs), lalu didorong mepet ke ujung
+       kanan baris tab itu dengan margin-left:auto — jadi sejajar & di
+       samping tombol tab paling kanan, bukan melayang lagi. -->
   <button class="reload-btn" id="reload-btn" title="Muat ulang data">
     <span class="reload-icon">🔄</span>
     <span class="reload-label">Muat Ulang</span>
@@ -5068,49 +5068,31 @@
   }
 
   // ------------------------------------------------------------------
-  // Posisikan tombol "Muat Ulang" (fixed) supaya "nangkring" tepat di
-  // atas tabel yang sedang tampil di layar, rata dengan sisi kanan
-  // tabel tsb. Dulu tombol ini disejajarkan dengan baris menu tab di
-  // dekat masthead/tombol Keluar — jadi kurang terlihat karena berdesakan
-  // dengan elemen lain di sana. Sekarang tombol mengikuti tabel mana pun
-  // yang sedang aktif (rekap, daftar user, kelas, kegiatan, ranking, dll),
-  // baik untuk admin maupun guru.
-  //
-  // Kalau tidak ada tabel yang tampil (mis. tampilan siswa yang memakai
-  // daftar kartu, bukan tabel), jatuhkan ke posisi sejajar judul panel
-  // yang sedang aktif, lalu masthead sebagai fallback terakhir.
-  // Posisi selalu dijaga minimal 12px dari tepi atas/kanan layar supaya
-  // saat halaman discroll ke bawah (tabel keluar dari layar bagian atas),
-  // tombol tidak ikut hilang / terlempar ke luar viewport.
+  // Pindahkan tombol "Muat Ulang" supaya jadi anak terakhir dari baris
+  // menu tab utama yang sedang tampil sesuai role: admin -> #admin-main-tabs,
+  // guru -> #guru-main-tabs. CSS margin-left:auto pada .reload-btn lalu
+  // mendorongnya mepet ke ujung kanan baris tab itu — jadi sejajar & di
+  // samping tombol tab paling kanan. Kalau tidak ada baris menu tab yang
+  // relevan (mis. siswa), tombolnya disembunyikan saja karena tidak ada
+  // baris tab untuk dijadikan acuan sejajar.
   // ------------------------------------------------------------------
   function positionReloadBtn(){
     if(!reloadBtn) return;
     let target = null;
-    const tables = document.querySelectorAll('.app table');
-    for(const t of tables){
-      if(t.offsetParent !== null){ target = t; break; }
+    if(currentUser?.role === 'admin'){
+      target = document.getElementById('admin-main-tabs');
+    } else if(currentUser?.role === 'guru'){
+      target = document.getElementById('guru-main-tabs');
     }
     if(!target){
-      target = document.querySelector('.panel.active .panel-head')
-            || document.querySelector('.masthead');
+      reloadBtn.style.display = 'none';
+      return;
     }
-    if(!target) return;
-    const rect = target.getBoundingClientRect();
-    const btnHeight = reloadBtn.offsetHeight || 36;
-    const top = rect.top - btnHeight - 10;
-    const right = window.innerWidth - rect.right;
-    reloadBtn.style.top = Math.max(12, Math.round(top)) + 'px';
-    reloadBtn.style.right = Math.max(12, Math.round(right)) + 'px';
+    reloadBtn.style.display = '';
+    if(reloadBtn.parentElement !== target){
+      target.appendChild(reloadBtn);
+    }
   }
-  window.addEventListener('resize', ()=> positionReloadBtn());
-  let reloadBtnScrollRaf = null;
-  window.addEventListener('scroll', ()=>{
-    if(reloadBtnScrollRaf) return;
-    reloadBtnScrollRaf = requestAnimationFrame(()=>{
-      positionReloadBtn();
-      reloadBtnScrollRaf = null;
-    });
-  }, { passive:true });
 
   // ------------------------------------------------------------------
   // Boot
@@ -5134,13 +5116,11 @@
     // restoreActiveTabs di atas).
     restoreActiveTabs();
 
-    // Sejajarkan tombol "Muat Ulang" dengan baris menu tab yang tampil.
-    // Dipanggil beberapa kali dengan jeda kecil karena tinggi konten di
-    // atasnya (mis. jumlah baris tab yang wrap) baru pasti setelah
-    // browser selesai reflow.
+    // Pindahkan tombol "Muat Ulang" ke ujung kanan baris menu tab yang
+    // tampil (lihat positionReloadBtn). Cukup dipanggil sekali karena ini
+    // cuma memindahkan elemen di DOM, bukan menghitung ulang posisi lewat
+    // geometri layar.
     positionReloadBtn();
-    setTimeout(positionReloadBtn, 50);
-    setTimeout(positionReloadBtn, 300);
   })();
 </script>
 </body>
