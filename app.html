@@ -1049,11 +1049,25 @@
   <div class="panel active" id="panel-siswa">
     <span class="class-badge" id="siswa-class-badge">Belum ada data kelas</span>
 
-    <!-- Landing: daftar pengumuman kegiatan -->
-    <div class="siswa-view active" id="siswa-list">
+    <!-- Landing pertama: daftar bulan yang punya kegiatan -->
+    <div class="siswa-view active" id="siswa-months">
       <div class="panel-head">
         <div>
-          <h2>Pengumuman Kegiatan Literasi</h2>
+          <h2>Pilih Bulan Kegiatan</h2>
+          <div class="sub">Pilih bulan untuk melihat daftar kegiatan literasi pada bulan tersebut.</div>
+        </div>
+      </div>
+
+      <div class="kegiatan-list" id="bulan-list"></div>
+    </div>
+
+    <!-- Setelah pilih bulan: daftar pengumuman kegiatan bulan tsb -->
+    <div class="siswa-view" id="siswa-list">
+      <button class="back-link" id="back-to-months">← Kembali ke daftar bulan</button>
+
+      <div class="panel-head">
+        <div>
+          <h2 id="siswa-list-judul">Pengumuman Kegiatan Literasi</h2>
           <div class="sub">Pilih kegiatan yang diumumkan admin untuk mulai mengisi ceklis.</div>
         </div>
       </div>
@@ -2715,6 +2729,7 @@
     }
     if(currentUser?.role === 'guru' || currentUser?.role === 'siswa'){
       renderKegiatanList();
+      renderBulanList();
       updateGuruKegiatanDisplay();
       renderAllClassTabsGuru();
     }
@@ -2730,7 +2745,10 @@
   // ------------------------------------------------------------------
   // SISWA: pengumuman kegiatan + ceklis
   // ------------------------------------------------------------------
+  const bulanListEl = document.getElementById('bulan-list');
+  const siswaMonths = document.getElementById('siswa-months');
   const kegiatanListEl = document.getElementById('kegiatan-list');
+  const siswaListJudul = document.getElementById('siswa-list-judul');
   const siswaList = document.getElementById('siswa-list');
   const siswaDetail = document.getElementById('siswa-detail');
   const detailJudul = document.getElementById('detail-judul');
@@ -2739,12 +2757,67 @@
   const detailPetugas = document.getElementById('detail-petugas');
   let siswaActiveKegiatan = null;
   let siswaSelectedTanggal = todayIso();
+  let siswaSelectedBulan = null; // "YYYY-MM" — bulan yang sedang dilihat siswa
+
+  // Kunci bulan (YYYY-MM) dari tanggal mulai sebuah kegiatan.
+  function bulanKeyOf(k){ return (k.tanggal_mulai || '').slice(0,7); }
+  function labelBulan(key){
+    const [y,m] = key.split('-').map(Number);
+    return `${bulanIndo[m-1]} ${y}`;
+  }
+
+  // Landing pertama siswa: daftar bulan yang punya kegiatan, terbaru duluan.
+  function renderBulanList(){
+    bulanListEl.innerHTML = "";
+    const byBulan = {};
+    kegiatanData.forEach(k=>{
+      const key = bulanKeyOf(k);
+      if(!key) return;
+      if(!byBulan[key]) byBulan[key] = [];
+      byBulan[key].push(k);
+    });
+    const keys = Object.keys(byBulan).sort((a,b)=> b.localeCompare(a));
+    if(keys.length === 0){
+      bulanListEl.innerHTML = '<div class="empty-state">Belum ada kegiatan literasi. Admin bisa menambahkannya lewat tab Admin → Kegiatan.</div>';
+      return;
+    }
+    keys.forEach(key=>{
+      const list = byBulan[key];
+      const belumDibuka = list.every(k=>!kegiatanSudahDibuka(k));
+      const card = document.createElement('div');
+      card.className = 'kegiatan-card';
+      card.innerHTML = `
+        <div>
+          <div class="k-title">${labelBulan(key)}</div>
+          <div class="k-period">${list.length} kegiatan</div>
+        </div>
+        <span class="k-status ${belumDibuka ? 'locked' : 'aktif'}">${belumDibuka ? '🔒 Belum ada yang terbuka' : 'Ada kegiatan terbuka'}</span>`;
+      card.addEventListener('click', ()=>{
+        siswaSelectedBulan = key;
+        siswaListJudul.textContent = `Kegiatan Bulan ${labelBulan(key)}`;
+        siswaMonths.classList.remove('active');
+        siswaList.classList.add('active');
+        renderKegiatanList();
+      });
+      bulanListEl.appendChild(card);
+    });
+  }
+
+  document.getElementById('back-to-months').addEventListener('click', async ()=>{
+    siswaSelectedBulan = null;
+    siswaList.classList.remove('active');
+    siswaMonths.classList.add('active');
+    await loadKegiatan();
+    renderBulanList();
+  });
 
   function renderKegiatanList(){
     kegiatanListEl.innerHTML = "";
-    const aktif = kegiatanData;
+    const aktif = siswaSelectedBulan
+      ? kegiatanData.filter(k=>bulanKeyOf(k) === siswaSelectedBulan)
+      : kegiatanData;
     if(aktif.length === 0){
-      kegiatanListEl.innerHTML = '<div class="empty-state">Belum ada kegiatan literasi. Admin bisa menambahkannya lewat tab Admin → Kegiatan.</div>';
+      kegiatanListEl.innerHTML = '<div class="empty-state">Belum ada kegiatan literasi pada bulan ini.</div>';
       return;
     }
     aktif.forEach(k=>{
@@ -2804,6 +2877,7 @@
     siswaList.classList.add('active');
     await loadKegiatan();
     renderKegiatanList();
+    renderBulanList();
   });
 
   const rosterEl = document.getElementById('roster-list');
@@ -4250,6 +4324,7 @@
     }
     if(currentUser.role === 'guru' || currentUser.role === 'siswa'){
       renderKegiatanList();
+      renderBulanList();
       updateGuruKegiatanDisplay();
       renderAllClassTabsGuru();
     }
@@ -4258,6 +4333,7 @@
       // Kegiatan yang tadinya terkunci harus otomatis "terbuka" begitu jam
       // buka tercapai, tanpa siswa perlu memuat ulang halaman.
       setInterval(()=>{
+        if(siswaMonths.classList.contains('active')) renderBulanList();
         if(siswaList.classList.contains('active')) renderKegiatanList();
       }, 30000);
     }
