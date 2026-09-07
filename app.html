@@ -1319,13 +1319,21 @@
             <option value="">Semua Kelas</option>
           </select>
         </div>
+        <div class="filter-block">
+          <div class="filter-label">Status</div>
+          <select class="month-picker-select" id="user-filter-jabatan">
+            <option value="">Semua Status</option>
+            <option value="biasa">Siswa biasa</option>
+            <option value="petugas">Petugas ceklis</option>
+          </select>
+        </div>
       </div>
 
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
         <button class="pill-btn danger-outline" id="delete-selected-btn" disabled>Hapus Terpilih (0)</button>
         <button class="pill-btn solid" id="export-user-excel-btn">📥 Export ke Excel</button>
       </div>
-      <div class="edit-hint" style="margin-top:-6px; margin-bottom:14px;">ℹ️ Export akan mengikuti filter Jenis Pengguna &amp; Kelas yang sedang dipilih di atas. Biarkan filter pada "Semua Peran" &amp; "Semua Kelas" untuk mengekspor seluruh data pengguna.</div>
+      <div class="edit-hint" style="margin-top:-6px; margin-bottom:14px;">ℹ️ Export akan mengikuti filter Jenis Pengguna, Kelas &amp; Status yang sedang dipilih di atas. Biarkan filter pada "Semua Peran", "Semua Kelas" &amp; "Semua Status" untuk mengekspor seluruh data pengguna. Filter Status ("Siswa biasa"/"Petugas ceklis") hanya berlaku untuk pengguna berperan Siswa.</div>
       <div class="table-scroll">
       <table class="recap-table sortable-table" id="user-table">
         <thead><tr>
@@ -1852,9 +1860,18 @@
   function getFilteredUsers(){
     const role = document.getElementById('user-filter-role')?.value || '';
     const kelas = document.getElementById('user-filter-kelas')?.value || '';
+    const jabatanFilter = document.getElementById('user-filter-jabatan')?.value || '';
     const filtered = profilesData.filter(u=>{
       if(role && u.role !== role) return false;
       if(kelas && u.kelas !== kelas) return false;
+      if(jabatanFilter){
+        // Filter status petugas/biasa hanya bermakna untuk siswa — pengguna
+        // dengan peran lain (admin/guru) selalu disembunyikan saat filter
+        // ini aktif, walau kolom jabatan mereka default 'biasa' di database.
+        if(u.role !== 'siswa') return false;
+        if(jabatanFilter === 'petugas' && u.jabatan !== 'petugas') return false;
+        if(jabatanFilter === 'biasa' && u.jabatan === 'petugas') return false;
+      }
       return true;
     });
     if(userSortKey){
@@ -2156,6 +2173,7 @@
 
   document.getElementById('user-filter-role').addEventListener('change', ()=>{ userPage = 1; renderUserTable(); });
   document.getElementById('user-filter-kelas').addEventListener('change', ()=>{ userPage = 1; renderUserTable(); });
+  document.getElementById('user-filter-jabatan').addEventListener('change', ()=>{ userPage = 1; renderUserTable(); });
 
   document.querySelectorAll('#user-table th[data-sort]').forEach(th=>{
     th.addEventListener('click', ()=>{
@@ -2339,9 +2357,12 @@
     }
     const roleVal = document.getElementById('user-filter-role')?.value || '';
     const kelasVal = document.getElementById('user-filter-kelas')?.value || '';
+    const jabatanVal = document.getElementById('user-filter-jabatan')?.value || '';
     const roleLabelMap = { admin:'Admin', guru:'Guru', siswa:'Siswa' };
     const roleLabel = roleVal ? roleLabelMap[roleVal] : 'Semua Peran';
     const kelasLabel = kelasVal ? kelasVal : 'Semua Kelas';
+    const jabatanLabelMap = { biasa:'Siswa biasa', petugas:'Petugas ceklis' };
+    const jabatanLabel = jabatanVal ? jabatanLabelMap[jabatanVal] : 'Semua Status';
 
     const header = ['No','Nama Lengkap','Email','Peran','NIP/NISN','Kelas','Status'];
     const rows = filtered.map((u,i)=>[
@@ -2357,6 +2378,7 @@
       ['Keterangan Export'],
       ['Filter Jenis Pengguna', roleLabel],
       ['Filter Kelas', kelasLabel],
+      ['Filter Status', jabatanLabel],
       ['Jumlah Data', filtered.length],
       ['Tanggal Export', new Date().toLocaleString('id-ID')],
     ];
@@ -2368,6 +2390,7 @@
       'export_pengguna',
       roleVal || 'semua-peran',
       kelasVal ? kelasVal.replace(/[^a-zA-Z0-9-_]/g,'') : 'semua-kelas',
+      jabatanVal || 'semua-status',
     ].join('_');
     XLSX.writeFile(wb, `${namaFileBagian}.xlsx`);
   });
