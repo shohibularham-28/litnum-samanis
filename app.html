@@ -4142,13 +4142,20 @@
     const kelasSel = document.getElementById('guru-harian-class-tabs');
     const kelas = kelasSel ? kelasSel.value : null;
     if(!kelas){ alert('Pilih kelas dulu.'); return; }
-    if(!guruActiveKegiatan){ alert('Tidak ada kegiatan literasi pada tanggal ini.'); return; }
-    const kegiatanJudul = guruActiveKegiatan.judul;
-    const kegiatanDeskripsi = (guruActiveKegiatan.deskripsi || '').trim();
+    const rows = domRowsToArray(recapBody);
+    if(rows.length === 0){
+      alert(guruActiveKegiatan
+        ? 'Belum ada data ceklis untuk kelas & tanggal ini.'
+        : 'Tidak ada kegiatan literasi maupun data ceklis pada tanggal ini.');
+      return;
+    }
+    // Kegiatan sumber boleh sudah dihapus admin — data ceklis/rekap yang sudah
+    // tercatat tetap tersimpan & tetap bisa diunduh PDF-nya (lihat renderRecap()).
+    const kegiatanJudul = guruActiveKegiatan ? guruActiveKegiatan.judul : 'Kegiatan sudah dihapus (data tetap tersimpan)';
+    const kegiatanDeskripsi = guruActiveKegiatan ? (guruActiveKegiatan.deskripsi || '').trim() : '';
     const petugasKelas = profilesData
       .filter(p=>p.role==='siswa' && p.kelas===kelas && p.jabatan==='petugas')
       .map(p=>p.full_name);
-    const rows = domRowsToArray(recapBody);
     const metaLines = [
       `Kelas: ${kelas}`,
       `Kegiatan: ${kegiatanJudul}`,
