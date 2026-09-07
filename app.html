@@ -1110,13 +1110,14 @@
     <div class="panel-head">
       <div>
         <h2>Rekap Literasi</h2>
-        <div class="sub">Lihat rekap harian atau rekap bulanan per kelas.</div>
+        <div class="sub">Lihat rekap harian, rekap bulanan, atau daftar kegiatan literasi per kelas.</div>
       </div>
     </div>
 
     <div class="admin-tabs">
       <div class="guru-subtab active" data-guruview="harian">Rekap Harian</div>
       <div class="guru-subtab" data-guruview="bulanan">Rekap Bulanan</div>
+      <div class="guru-subtab" data-guruview="kegiatan">Kegiatan Literasi</div>
       <div class="guru-subtab" data-guruview="siswa">Kelola Siswa</div>
     </div>
 
@@ -1201,6 +1202,31 @@
       <div class="signature-block" id="sig-bulanan"></div>
       <div class="print-row">
         <button class="pill-btn" id="print-bulanan">📄 Unduh PDF (A4)</button>
+      </div>
+    </div>
+
+    <div class="guru-subpanel" id="guru-kegiatan">
+      <!-- Landing: daftar bulan yang punya kegiatan — sama seperti tampilan siswa -->
+      <div class="siswa-view active" id="guru-lit-months">
+        <div class="panel-head">
+          <div>
+            <h2>Pilih Bulan Kegiatan</h2>
+            <div class="sub">Pilih bulan untuk melihat daftar kegiatan literasi pada bulan tersebut.</div>
+          </div>
+        </div>
+        <div class="kegiatan-list" id="guru-lit-bulan-list"></div>
+      </div>
+
+      <!-- Daftar kegiatan pada bulan terpilih — hanya lihat, guru tidak masuk ke ceklis -->
+      <div class="siswa-view" id="guru-lit-list">
+        <button class="back-link" id="guru-lit-back-to-months">← Kembali ke daftar bulan</button>
+        <div class="panel-head">
+          <div>
+            <h2 id="guru-lit-list-judul">Pengumuman Kegiatan Literasi</h2>
+            <div class="sub">Daftar kegiatan literasi yang diumumkan admin. Pengisian ceklis dilakukan oleh petugas ceklis siswa di kelas masing-masing — guru hanya bisa melihat pengumumannya di sini.</div>
+          </div>
+        </div>
+        <div class="kegiatan-list" id="guru-lit-kegiatan-list"></div>
       </div>
     </div>
 
@@ -1698,18 +1724,48 @@
   let kegiatanData = [];   // public.kegiatan
   let ceklisCache = {};    // key `${kegiatan_id}|${kelas}` -> rows
 
+  // ------------------------------------------------------------------
+  // Supabase (lewat PostgREST) membatasi setiap query SELECT ke maksimal
+  // 1000 baris secara default, walau tanpa .limit() sekalipun. Kalau
+  // jumlah baris di tabel sudah lebih dari itu, sisanya diam-diam TIDAK
+  // ikut kebawa — makanya user/kegiatan/kelas atau rekap yang baru
+  // ditambahkan bisa saja "hilang" dari tampilan padahal datanya ada di
+  // database. fetchAllPages() mengambil data per halaman 1000 baris dan
+  // menggabungkannya, supaya semua baris selalu ikut kebawa berapa pun
+  // jumlahnya.
+  const SUPABASE_PAGE_SIZE = 1000;
+  async function fetchAllPages(buildQuery){
+    let from = 0;
+    let all = [];
+    while(true){
+      const { data, error } = await buildQuery(from, from + SUPABASE_PAGE_SIZE - 1);
+      if(error) return { data: null, error };
+      const rows = data || [];
+      all = all.concat(rows);
+      if(rows.length < SUPABASE_PAGE_SIZE) break;
+      from += SUPABASE_PAGE_SIZE;
+    }
+    return { data: all, error: null };
+  }
+
   async function loadProfiles(){
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: true });
+    const { data, error } = await fetchAllPages((from, to) =>
+      supabase.from('profiles').select('*').order('created_at', { ascending: true }).range(from, to)
+    );
     if(error){ console.error(error); profilesData = []; return; }
     profilesData = data || [];
   }
   async function loadKelas(){
-    const { data, error } = await supabase.from('kelas').select('*, wali:wali_guru_id(full_name, nip)').order('nama');
+    const { data, error } = await fetchAllPages((from, to) =>
+      supabase.from('kelas').select('*, wali:wali_guru_id(full_name, nip)').order('nama').range(from, to)
+    );
     if(error){ console.error(error); kelasData = []; return; }
     kelasData = data || [];
   }
   async function loadKegiatan(){
-    const { data, error } = await supabase.from('kegiatan').select('*').order('created_at', { ascending: false });
+    const { data, error } = await fetchAllPages((from, to) =>
+      supabase.from('kegiatan').select('*').order('created_at', { ascending: false }).range(from, to)
+    );
     if(error){ console.error(error); kegiatanData = []; return; }
     kegiatanData = data || [];
   }
@@ -2888,6 +2944,10 @@
       renderAllClassTabsGuru();
     }
     if(currentUser?.role === 'guru'){
+      renderGuruLitBulanList();
+      if(guruLitListEl && guruLitListEl.classList.contains('active')) renderGuruLitKegiatanList();
+    }
+    if(currentUser?.role === 'guru'){
       // Muat ulang tabel "Kelola Siswa" juga — sebelumnya tabel ini tidak
       // di-refresh setelah tambah/edit/hapus (termasuk hapus terpilih lewat
       // checkbox), sehingga baris yang sudah dihapus masih tampak di layar
@@ -3227,6 +3287,92 @@
   // Tanggal ceklis siswa/petugas TIDAK bisa dipilih bebas — selalu mengikuti
   // tanggal_mulai kegiatan yang sudah ditentukan admin saat membuat kegiatan.
   const siswaTanggalDisplay = document.getElementById('siswa-tanggal-display');
+
+  // ------------------------------------------------------------------
+  // GURU: tab "Kegiatan Literasi" — format tampilan (bulan → daftar
+  // kegiatan) sama persis seperti punya siswa, tapi kartu kegiatannya
+  // tidak bisa diklik untuk masuk mengisi ceklis. Guru hanya melihat
+  // pengumumannya; pengisian ceklis tetap tugas petugas ceklis siswa.
+  // ------------------------------------------------------------------
+  const guruLitMonths = document.getElementById('guru-lit-months');
+  const guruLitBulanListEl = document.getElementById('guru-lit-bulan-list');
+  const guruLitListEl = document.getElementById('guru-lit-list');
+  const guruLitKegiatanListEl = document.getElementById('guru-lit-kegiatan-list');
+  const guruLitListJudul = document.getElementById('guru-lit-list-judul');
+  let guruLitSelectedBulan = null;
+
+  function renderGuruLitBulanList(){
+    if(!guruLitBulanListEl) return;
+    guruLitBulanListEl.innerHTML = "";
+    const byBulan = {};
+    kegiatanData.forEach(k=>{
+      const key = bulanKeyOf(k);
+      if(!key) return;
+      if(!byBulan[key]) byBulan[key] = [];
+      byBulan[key].push(k);
+    });
+    const keys = Object.keys(byBulan).sort((a,b)=> b.localeCompare(a));
+    if(keys.length === 0){
+      guruLitBulanListEl.innerHTML = '<div class="empty-state">Belum ada kegiatan literasi. Admin bisa menambahkannya lewat tab Admin → Kegiatan.</div>';
+      return;
+    }
+    keys.forEach(key=>{
+      const list = byBulan[key];
+      const card = document.createElement('div');
+      card.className = 'kegiatan-card';
+      card.innerHTML = `
+        <div>
+          <div class="k-title">${labelBulan(key)}</div>
+          <div class="k-period">${list.length} kegiatan</div>
+        </div>
+        <span class="k-status aktif">Lihat daftar</span>`;
+      card.addEventListener('click', ()=>{
+        guruLitSelectedBulan = key;
+        guruLitListJudul.textContent = `Kegiatan Bulan ${labelBulan(key)}`;
+        guruLitMonths.classList.remove('active');
+        guruLitListEl.classList.add('active');
+        renderGuruLitKegiatanList();
+      });
+      guruLitBulanListEl.appendChild(card);
+    });
+  }
+
+  function renderGuruLitKegiatanList(){
+    if(!guruLitKegiatanListEl) return;
+    guruLitKegiatanListEl.innerHTML = "";
+    const aktif = guruLitSelectedBulan
+      ? kegiatanData.filter(k=>bulanKeyOf(k) === guruLitSelectedBulan)
+      : kegiatanData;
+    if(aktif.length === 0){
+      guruLitKegiatanListEl.innerHTML = '<div class="empty-state">Belum ada kegiatan literasi pada bulan ini.</div>';
+      return;
+    }
+    aktif.forEach(k=>{
+      const periode = `${fmtTanggalIndo(k.tanggal_mulai)} pukul ${fmtJam(k.jam_mulai)} WIB – ${fmtTanggalIndo(k.tanggal_selesai)}`;
+      const card = document.createElement('div');
+      // class "locked" dipakai hanya untuk gaya kartu non-klik (cursor
+      // default, tanpa hover) — guru memang tidak bisa masuk ke ceklis,
+      // bukan karena jadwal belum terbuka seperti pada tampilan siswa.
+      card.className = 'kegiatan-card locked';
+      card.innerHTML = `
+        <div>
+          <div class="k-title">${esc(k.judul)}</div>
+          <div class="k-period">${periode}</div>
+          ${k.deskripsi && k.deskripsi.trim() ? `<div class="k-period" style="margin-top:2px;">${esc(k.deskripsi)}</div>` : ''}
+        </div>
+        <span class="k-status ${k.status}">${k.status==='aktif' ? 'Aktif' : 'Selesai'}</span>`;
+      guruLitKegiatanListEl.appendChild(card);
+    });
+  }
+
+  const guruLitBackBtn = document.getElementById('guru-lit-back-to-months');
+  if(guruLitBackBtn){
+    guruLitBackBtn.addEventListener('click', ()=>{
+      guruLitSelectedBulan = null;
+      guruLitListEl.classList.remove('active');
+      guruLitMonths.classList.add('active');
+    });
+  }
 
   // ------------------------------------------------------------------
   // GURU: kelas tabs bersama (harian / bulanan / kelola siswa)
@@ -3813,9 +3959,13 @@
     const lastDay = new Date(tahun, bulanIdx+1, 0).getDate();
     const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
-    const { data, error } = await supabase.from('ceklis')
-      .select('siswa_id, status, tanggal, siswa:siswa_id(full_name)')
-      .eq('kelas', kelas).gte('tanggal', first).lte('tanggal', last);
+    // Dipaginasi (lihat fetchAllPages) supaya rekap sebulan tidak kepotong
+    // diam-diam saat baris ceklis kelas ini dalam sebulan > 1000.
+    const { data, error } = await fetchAllPages((from, to) =>
+      supabase.from('ceklis')
+        .select('siswa_id, status, tanggal, siswa:siswa_id(full_name)')
+        .eq('kelas', kelas).gte('tanggal', first).lte('tanggal', last).range(from, to)
+    );
     if(error){ console.error(error); bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Gagal memuat data.</td></tr>'; return; }
 
     const perSiswa = {};
@@ -3942,10 +4092,14 @@
 
     // Ambil langsung by tanggal (bukan lewat kegiatan_id) supaya rekap tetap
     // tampil walau kegiatan yang menaunginya sudah dihapus admin — data
-    // ceklis sendiri tidak pernah ikut terhapus (lihat schema.sql).
-    let query = supabase.from('ceklis').select('*, siswa:siswa_id(full_name)').eq('tanggal', tanggal);
-    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
-    const { data, error } = await query;
+    // ceklis sendiri tidak pernah ikut terhapus (lihat schema.sql). Dipaginasi
+    // supaya tidak kepotong diam-diam kalau baris ceklis tanggal ini > 1000
+    // (misalnya "Semua Kelas" di sekolah dengan banyak siswa).
+    const { data, error } = await fetchAllPages((from, to) => {
+      let q = supabase.from('ceklis').select('*, siswa:siswa_id(full_name)').eq('tanggal', tanggal).range(from, to);
+      if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) q = q.eq('kelas', kelasFilter);
+      return q;
+    });
     if(error){
       console.error(error);
       adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Gagal memuat data.</td></tr>';
@@ -3990,11 +4144,15 @@
     const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
     const kelasLabel = (!kelasFilter || kelasFilter === ADMIN_ALL_KELAS) ? 'Semua Kelas' : `Kelas ${kelasFilter}`;
 
-    let query = supabase.from('ceklis')
-      .select('siswa_id, kelas, status, tanggal, siswa:siswa_id(full_name)')
-      .gte('tanggal', first).lte('tanggal', last);
-    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
-    const { data, error } = await query;
+    // Dipaginasi (lihat fetchAllPages) supaya rekap sebulan tidak kepotong
+    // diam-diam saat baris ceklisnya > 1000 (kelas banyak × 20-31 hari).
+    const { data, error } = await fetchAllPages((from, to) => {
+      let q = supabase.from('ceklis')
+        .select('siswa_id, kelas, status, tanggal, siswa:siswa_id(full_name)')
+        .gte('tanggal', first).lte('tanggal', last).range(from, to);
+      if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) q = q.eq('kelas', kelasFilter);
+      return q;
+    });
     if(error){
       console.error(error);
       adminBulananBody.innerHTML = '<tr><td colspan="9" class="empty-state">Gagal memuat data.</td></tr>';
@@ -4087,34 +4245,38 @@
   }
 
   // ---- Admin: Hapus rekap SATU kelas pada SATU tanggal saja ----
-  // Harus pilih kegiatan + satu kelas (bukan "Semua Kelas") + tanggal dulu;
-  // hanya baris ceklis yang cocok ketiganya yang dihapus, tanggal & kelas
-  // lain tidak tersentuh.
+  // Hapus berdasarkan kelas & tanggal saja (BUKAN kegiatan_id) — supaya
+  // tombol ini tetap bisa menghapus data lama walaupun kegiatan yang
+  // menaunginya sudah dihapus admin (kegiatan_id baris itu jadi NULL, tapi
+  // data ceklisnya sendiri tetap tersimpan dan tetap harus bisa dihapus).
+  // Harus pilih satu kelas dulu (bukan "Semua Kelas"); hanya baris ceklis
+  // kelas & tanggal itu yang dihapus, kelas/tanggal lain tidak tersentuh.
   const hapusRekapTanggalBtn = document.getElementById('hapus-rekap-tanggal-btn');
   if(hapusRekapTanggalBtn){
     hapusRekapTanggalBtn.addEventListener('click', async ()=>{
-      const kegiatanId = adminActiveKegiatan ? adminActiveKegiatan.id : null;
-      const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : '';
+      const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : null;
       const harianSel = document.getElementById('admin-rekap-harian-class-tabs');
       const kelasFilter = harianSel ? harianSel.value : null;
       const tanggal = currentAdminHarianTanggal();
 
-      if(!kegiatanId){ alert('Tidak ada kegiatan literasi pada tanggal ini.'); return; }
       if(!kelasFilter || kelasFilter === ADMIN_ALL_KELAS){
         alert('Pilih satu kelas terlebih dahulu (bukan "Semua Kelas") sebelum menghapus rekap.');
         return;
       }
 
+      const labelKegiatan = kegiatanJudul
+        ? `pada kegiatan "${kegiatanJudul}"`
+        : '(kegiatan yang menaunginya sudah dihapus, tapi datanya masih tersimpan)';
       if(!confirm(
-        `Hapus data ceklis Kelas ${kelasFilter} pada kegiatan "${kegiatanJudul}" untuk tanggal ${fmtTanggalIndo(tanggal)}?\n\n` +
+        `Hapus data ceklis Kelas ${kelasFilter} ${labelKegiatan} untuk tanggal ${fmtTanggalIndo(tanggal)}?\n\n` +
         'Hanya data kelas & tanggal ini yang akan dihapus — rekap tanggal lain dan kelas lain tidak terpengaruh. Tindakan ini tidak bisa dibatalkan.'
       )) return;
 
       hapusRekapTanggalBtn.disabled = true;
       hapusRekapTanggalBtn.textContent = 'Menghapus…';
 
-      const { error } = await supabase.from('ceklis').delete()
-        .eq('kegiatan_id', kegiatanId).eq('kelas', kelasFilter).eq('tanggal', tanggal);
+      const { error, count } = await supabase.from('ceklis').delete({ count: 'exact' })
+        .eq('kelas', kelasFilter).eq('tanggal', tanggal);
 
       hapusRekapTanggalBtn.disabled = false;
       hapusRekapTanggalBtn.textContent = '🗑️ Hapus Rekap Tanggal Ini';
@@ -4123,9 +4285,18 @@
         alert('Gagal menghapus rekap: ' + error.message);
         return;
       }
+      if(!count){
+        alert('Tidak ada data ceklis untuk Kelas ' + kelasFilter + ' pada tanggal ini.');
+        return;
+      }
 
-      delete ceklisCache[`${kegiatanId}|${kelasFilter}`];
-      alert(`Rekap Kelas ${kelasFilter} tanggal ${fmtTanggalIndo(tanggal)} berhasil dihapus.`);
+      // Bersihkan cache kegiatan manapun yang berkaitan dengan kelas ini —
+      // baris yang dihapus tadi bisa saja tadinya tercatat di bawah kegiatan
+      // yang berbeda-beda (termasuk yang sudah dihapus / kegiatan_id NULL).
+      Object.keys(ceklisCache).forEach(key=>{
+        if(key.endsWith(`|${kelasFilter}`)) delete ceklisCache[key];
+      });
+      alert(`Rekap Kelas ${kelasFilter} tanggal ${fmtTanggalIndo(tanggal)} berhasil dihapus (${count} baris).`);
       await renderAdminRekapHarian(kelasFilter);
     });
   }
@@ -4442,11 +4613,16 @@
     if(mulai > akhir){ alert('Tanggal mulai tidak boleh setelah tanggal akhir.'); return; }
 
     rankingCaption.textContent = 'Memuat data…';
-    const { data, error } = await supabase.from('ceklis')
-      .select('siswa_id')
-      .eq('status', 'hadir')
-      .gte('tanggal', mulai)
-      .lte('tanggal', akhir);
+    // Dipaginasi (lihat fetchAllPages) supaya ranking rentang tanggal panjang
+    // (seluruh kelas × banyak hari) tidak kepotong diam-diam saat > 1000 baris.
+    const { data, error } = await fetchAllPages((from, to) =>
+      supabase.from('ceklis')
+        .select('siswa_id')
+        .eq('status', 'hadir')
+        .gte('tanggal', mulai)
+        .lte('tanggal', akhir)
+        .range(from, to)
+    );
     if(error){
       console.error(error);
       rankingCaption.textContent = 'Gagal memuat data.';
