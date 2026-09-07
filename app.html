@@ -3246,6 +3246,9 @@
     const id = e.target.dataset.id;
     const cur = e.target.dataset.status;
     const next = cycle[cur] || 'hadir';
+    const namaSiswa = e.target.closest('tr')?.children?.[1]?.textContent || 'siswa ini';
+    const konfirmasi = confirm(`Ubah status ${namaSiswa} dari "${labelMap[cur]}" menjadi "${labelMap[next]}"?`);
+    if(!konfirmasi) return;
     const { error } = await supabase.from('ceklis').update({ status: next }).eq('id', id);
     if(error){ alert('Gagal memperbarui: ' + error.message); return; }
     e.target.dataset.status = next;
