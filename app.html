@@ -3616,15 +3616,35 @@
     bulananWrap.value = namaKelasWali[0];
     siswaWrap.value = namaKelasWali[0];
 
-    harianWrap.addEventListener('change', async ()=>{
-      await renderRecap(harianWrap.value);
-    });
-    bulananWrap.addEventListener('change', async ()=>{
-      await renderBulanan(bulananWrap.value);
-    });
-    siswaWrap.addEventListener('change', ()=>{
-      renderSiswaKelola(siswaWrap.value || null);
-    });
+    // PENTING: fungsi ini (renderAllClassTabsGuru) dipanggil ulang setiap kali
+    // refreshAdminData() jalan (yaitu setiap ada aksi tambah/edit/hapus di
+    // aplikasi — bisa puluhan kali dalam satu sesi). harianWrap/bulananWrap/
+    // siswaWrap adalah elemen <select> yang SAMA setiap saat (innerHTML-nya
+    // saja yang diganti), jadi kalau addEventListener dipasang tanpa guard di
+    // sini, listener 'change' menumpuk (2x, 3x, dst) tiap kali fungsi ini
+    // dipanggil ulang. Begitu dropdown kelas berubah, SEMUA listener yang
+    // menumpuk itu jalan bersamaan dan masing-masing me-render ulang tabel
+    // tanpa saling tahu — hasilnya data di Rekap Harian/Bulanan tampil
+    // dobel-dobel (nomor urut restart dari 1 lagi di tengah tabel). Guard
+    // dataset di bawah memastikan listener hanya dipasang SEKALI per elemen.
+    if(!harianWrap.dataset.changeBound){
+      harianWrap.dataset.changeBound = '1';
+      harianWrap.addEventListener('change', async ()=>{
+        await renderRecap(harianWrap.value);
+      });
+    }
+    if(!bulananWrap.dataset.changeBound){
+      bulananWrap.dataset.changeBound = '1';
+      bulananWrap.addEventListener('change', async ()=>{
+        await renderBulanan(bulananWrap.value);
+      });
+    }
+    if(!siswaWrap.dataset.changeBound){
+      siswaWrap.dataset.changeBound = '1';
+      siswaWrap.addEventListener('change', ()=>{
+        renderSiswaKelola(siswaWrap.value || null);
+      });
+    }
 
     renderRecap(namaKelasWali[0]);
     renderBulanan(namaKelasWali[0]);
@@ -4431,12 +4451,22 @@
     harianWrap.value = ADMIN_ALL_KELAS;
     bulananWrap.value = ADMIN_ALL_KELAS;
 
-    harianWrap.addEventListener('change', async ()=>{
-      await renderAdminRekapHarian(harianWrap.value);
-    });
-    bulananWrap.addEventListener('change', async ()=>{
-      await renderAdminRekapBulanan(bulananWrap.value);
-    });
+    // Sama seperti di renderAllClassTabsGuru(): fungsi ini dipanggil ulang
+    // setiap refreshAdminData() jalan, jadi listener 'change' harus di-guard
+    // supaya tidak menumpuk dan menyebabkan Rekap Harian/Bulanan Admin
+    // tampil dobel-dobel saat dropdown kelas diganti.
+    if(!harianWrap.dataset.changeBound){
+      harianWrap.dataset.changeBound = '1';
+      harianWrap.addEventListener('change', async ()=>{
+        await renderAdminRekapHarian(harianWrap.value);
+      });
+    }
+    if(!bulananWrap.dataset.changeBound){
+      bulananWrap.dataset.changeBound = '1';
+      bulananWrap.addEventListener('change', async ()=>{
+        await renderAdminRekapBulanan(bulananWrap.value);
+      });
+    }
 
     renderAdminRekapHarian(ADMIN_ALL_KELAS);
     renderAdminRekapBulanan(ADMIN_ALL_KELAS);
