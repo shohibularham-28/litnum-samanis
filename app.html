@@ -2742,6 +2742,8 @@
     return new Date() >= bukaAt;
   }
 
+  let kegiatanEditingId = null; // id kegiatan yang barisnya sedang dalam mode edit inline
+
   function renderKegiatanAdmin(){
     kegiatanAdminBody.innerHTML = "";
     if(kegiatanData.length === 0){
@@ -2749,6 +2751,10 @@
       return;
     }
     kegiatanData.forEach(k=>{
+      if(k.id === kegiatanEditingId){
+        kegiatanAdminBody.appendChild(buatBarisEditKegiatan(k));
+        return;
+      }
       const statusLabel = k.status === 'aktif' ? 'Aktif' : 'Selesai';
       const periode = `${fmtTanggalIndo(k.tanggal_mulai)} pukul ${fmtJam(k.jam_mulai)} WIB – ${fmtTanggalIndo(k.tanggal_selesai)}`;
       const belumBuka = !kegiatanSudahDibuka(k);
@@ -2763,35 +2769,9 @@
       kegiatanAdminBody.appendChild(tr);
     });
     kegiatanAdminBody.querySelectorAll('[data-edit-k]').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        const k = kegiatanData.find(x=>x.id === btn.dataset.editK);
-        if(!k) return;
-
-        const judulInput = prompt('Judul kegiatan:', k.judul);
-        if(judulInput === null) return;
-        const judul = judulInput.trim();
-        if(!judul){ alert('Judul tidak boleh kosong.'); return; }
-
-        const mulaiInput = prompt('Tanggal mulai (format YYYY-MM-DD):', k.tanggal_mulai);
-        if(mulaiInput === null) return;
-        const jamInput = prompt('Jam buka pada tanggal mulai, WIB (format HH:MM) — petugas baru bisa mengisi ceklis setelah jam ini:', fmtJam(k.jam_mulai));
-        if(jamInput === null) return;
-        const selesaiInput = prompt('Tanggal selesai (format YYYY-MM-DD):', k.tanggal_selesai);
-        if(selesaiInput === null) return;
-        const deskripsiInput = prompt('Deskripsi kegiatan (opsional — muncul di halaman ceklis petugas, kosongkan jika tidak perlu):', k.deskripsi || '');
-        if(deskripsiInput === null) return;
-        const mulai = mulaiInput.trim(), jam = jamInput.trim(), selesai = selesaiInput.trim(), deskripsi = deskripsiInput.trim();
-        const formatTanggalOk = /^\d{4}-\d{2}-\d{2}$/.test(mulai) && /^\d{4}-\d{2}-\d{2}$/.test(selesai);
-        const formatJamOk = /^\d{2}:\d{2}$/.test(jam);
-        if(!formatTanggalOk){ alert('Format tanggal harus YYYY-MM-DD, contoh: 2026-09-06.'); return; }
-        if(!formatJamOk){ alert('Format jam harus HH:MM, contoh: 08:00.'); return; }
-        if(selesai < mulai){ alert('Tanggal selesai tidak boleh sebelum tanggal mulai.'); return; }
-
-        const { error } = await supabase.from('kegiatan').update({
-          judul, tanggal_mulai: mulai, jam_mulai: jam + ':00', tanggal_selesai: selesai, deskripsi: deskripsi || null,
-        }).eq('id', k.id);
-        if(error){ alert('Gagal menyimpan perubahan kegiatan: ' + error.message); return; }
-        await refreshAdminData();
+      btn.addEventListener('click', ()=>{
+        kegiatanEditingId = btn.dataset.editK;
+        renderKegiatanAdmin();
       });
     });
     kegiatanAdminBody.querySelectorAll('[data-toggle-k]').forEach(btn=>{
@@ -2810,6 +2790,51 @@
         await refreshAdminData();
       });
     });
+  }
+
+  // Baris mode-edit untuk satu kegiatan — kolom-kolomnya diganti jadi isian
+  // (input/textarea) memakai format & tata letak yang sama seperti form
+  // "+ Tambah Kegiatan", supaya konsisten dengan tampilan tambah kegiatan.
+  function buatBarisEditKegiatan(k){
+    const tr = document.createElement('tr');
+    tr.className = 'kegiatan-edit-row';
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.innerHTML = `
+      <div class="add-form open" style="grid-template-columns:1.3fr .8fr .6fr .8fr auto; margin-bottom:0;">
+        <input type="text" class="edit-k-judul" placeholder="Judul kegiatan (mis. Tantangan Baca Buku)" value="${esc(k.judul || '')}">
+        <input type="date" class="edit-k-mulai" title="Tanggal mulai kegiatan" value="${k.tanggal_mulai || ''}">
+        <input type="time" class="edit-k-jam" title="Jam buka kegiatan (WIB) — petugas baru bisa mengisi ceklis setelah jam ini tercapai" value="${fmtJam(k.jam_mulai)}">
+        <input type="date" class="edit-k-selesai" title="Tanggal selesai kegiatan" value="${k.tanggal_selesai || ''}">
+        <div style="display:flex; gap:8px;">
+          <button class="pill-btn solid edit-k-simpan">Simpan</button>
+          <button class="pill-btn edit-k-batal">Batal</button>
+        </div>
+        <textarea rows="2" class="edit-k-deskripsi" placeholder="Deskripsi kegiatan (opsional) — muncul di halaman ceklis petugas, tidak muncul di daftar kegiatan" style="grid-column:1 / -1; font-family:'Inter',sans-serif; font-size:13px; padding:9px 12px; border-radius:8px; border:1px solid var(--rule); background:var(--card); resize:vertical;">${esc(k.deskripsi || '')}</textarea>
+      </div>`;
+    tr.appendChild(td);
+
+    td.querySelector('.edit-k-batal').addEventListener('click', ()=>{
+      kegiatanEditingId = null;
+      renderKegiatanAdmin();
+    });
+    td.querySelector('.edit-k-simpan').addEventListener('click', async ()=>{
+      const judul = td.querySelector('.edit-k-judul').value.trim();
+      const mulai = td.querySelector('.edit-k-mulai').value;
+      const jam = td.querySelector('.edit-k-jam').value || '00:00';
+      const selesai = td.querySelector('.edit-k-selesai').value;
+      const deskripsi = td.querySelector('.edit-k-deskripsi').value.trim();
+      if(!judul){ alert('Judul tidak boleh kosong.'); return; }
+      if(!mulai || !selesai){ alert('Tanggal mulai dan tanggal selesai wajib diisi.'); return; }
+      if(selesai < mulai){ alert('Tanggal selesai tidak boleh sebelum tanggal mulai.'); return; }
+      const { error } = await supabase.from('kegiatan').update({
+        judul, tanggal_mulai: mulai, jam_mulai: jam + ':00', tanggal_selesai: selesai, deskripsi: deskripsi || null,
+      }).eq('id', k.id);
+      if(error){ alert('Gagal menyimpan perubahan kegiatan: ' + error.message); return; }
+      kegiatanEditingId = null;
+      await refreshAdminData();
+    });
+    return tr;
   }
 
   document.getElementById('toggle-add-kegiatan').addEventListener('click',()=>{
