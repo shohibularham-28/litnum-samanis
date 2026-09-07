@@ -471,14 +471,11 @@
     flex-wrap:wrap;
   }
   .signature-block{
-    display:flex;
-    justify-content:space-between;
-    gap:24px;
-    margin-top:36px;
-    padding-top:22px;
-    border-top:1px solid var(--rule);
-    font-size:13px;
-    flex-wrap:wrap;
+    /* Blok tanda tangan ini tetap ada di DOM (dipakai sebagai sumber data
+       nama/NIP saat generate PDF) tapi sengaja disembunyikan dari tampilan
+       layar — tanda tangan hanya perlu terlihat di dalam file PDF yang
+       diunduh, bukan di halaman web. */
+    display:none;
   }
   .sig-col{width:230px;}
   .sig-line1{margin-bottom:2px; color:var(--ink-soft);}
@@ -1164,14 +1161,6 @@
     <div class="edit-hint">Klik tombol <strong>Edit</strong> pada baris siswa untuk mengubah status ceklis lewat dropdown.</div>
     <div class="signature-block" id="sig-harian"></div>
     <div class="print-row">
-      <div class="ttd-picker">
-        Kepala Sekolah:
-        <select id="ttd-kepsek-harian"></select>
-      </div>
-      <div class="ttd-picker">
-        Guru Literasi:
-        <select id="ttd-guru-harian"></select>
-      </div>
       <button class="pill-btn" id="print-harian">📄 Unduh PDF (A4)</button>
     </div>
     </div>
@@ -1211,14 +1200,6 @@
       <div class="edit-hint">Angka menunjukkan jumlah kemunculan status tiap siswa selama bulan terpilih.</div>
       <div class="signature-block" id="sig-bulanan"></div>
       <div class="print-row">
-        <div class="ttd-picker">
-          Kepala Sekolah:
-          <select id="ttd-kepsek-bulanan"></select>
-        </div>
-        <div class="ttd-picker">
-          Guru Literasi:
-          <select id="ttd-guru-bulanan"></select>
-        </div>
         <button class="pill-btn" id="print-bulanan">📄 Unduh PDF (A4)</button>
       </div>
     </div>
@@ -1715,7 +1696,7 @@
     profilesData = data || [];
   }
   async function loadKelas(){
-    const { data, error } = await supabase.from('kelas').select('*, wali:wali_guru_id(full_name)').order('nama');
+    const { data, error } = await supabase.from('kelas').select('*, wali:wali_guru_id(full_name, nip)').order('nama');
     if(error){ console.error(error); kelasData = []; return; }
     kelasData = data || [];
   }
@@ -1748,16 +1729,34 @@
   }
 
   // ------------------------------------------------------------------
-  // Tanda tangan / dropdown guru (siapa yang bertugas menandatangani)
+  // Tanda tangan — otomatis, tidak dipilih manual lewat dropdown lagi:
+  //   • Kepala Sekolah: selalu AGUNG CAHYONO, M. Pd. (tetap, untuk semua kelas)
+  //   • Guru Literasi : mengikuti wali kelas dari kelas yang sedang ditampilkan
+  // Blok ini disembunyikan dari tampilan layar (lihat CSS .signature-block)
+  // dan baru "muncul" saat dokumennya diunduh sebagai PDF.
   // ------------------------------------------------------------------
   const TTD_SUFFIXES = ['harian', 'bulanan'];
-  const TTD_PERAN = ['kepsek', 'guru'];   // dropdown Kepala Sekolah & Guru Literasi, keduanya diisi dari daftar guru
   const tanggalOtomatis = fmtTanggalIndo(todayIso());
   const NIP_KOSONG = "..............................";
-  let guruListCache = [];   // {id, full_name, nip} — daftar guru untuk kedua dropdown ttd
+  const NAMA_KEPSEK_TETAP = 'AGUNG CAHYONO, M. Pd.';
 
   function formatNip(nip){
     return nip ? `NIP. ${nip}` : `NIP. ${NIP_KOSONG}`;
+  }
+
+  // NIP Kepala Sekolah saat ini masih kosong di kolom kepala sekolah —
+  // diambil otomatis dari data guru (public.profiles) yang namanya cocok
+  // dengan NAMA_KEPSEK_TETAP ("AGUNG CAHYONO, M. Pd."), bukan dari input
+  // manual. Perbandingan nama dinormalisasi (tanpa tanda baca/spasi ganda,
+  // tanpa memandang huruf besar/kecil) supaya variasi penulisan seperti
+  // "M.Pd" vs "M. Pd." tetap terbaca sebagai orang yang sama.
+  function normalisasiNama(s){
+    return (s || '').toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
+  }
+  function cariNipKepsekDariGuru(){
+    const target = normalisasiNama(NAMA_KEPSEK_TETAP);
+    const cocok = profilesData.find(p => p.role === 'guru' && normalisasiNama(p.full_name) === target);
+    return cocok?.nip || '';
   }
 
   function buildSignatureBlock(suffix){
@@ -1766,7 +1765,7 @@
         <div class="sig-line1">Mengetahui,</div>
         <div class="sig-role">Kepala Sekolah,</div>
         <div class="sig-space"></div>
-        <div class="sig-name" id="sig-name-kepsek-${suffix}">${NAMA_KOSONG}</div>
+        <div class="sig-name" id="sig-name-kepsek-${suffix}">${NAMA_KEPSEK_TETAP}</div>
         <div class="sig-nip" id="sig-nip-kepsek-${suffix}">${formatNip('')}</div>
       </div>
       <div class="sig-col">
@@ -1780,39 +1779,35 @@
   document.getElementById('sig-harian').innerHTML = buildSignatureBlock('harian');
   document.getElementById('sig-bulanan').innerHTML = buildSignatureBlock('bulanan');
 
-  function refreshTtdGuruSelects(){
-    guruListCache = profilesData.filter(u=>u.role==='guru').map(u=>({ id: u.id, full_name: u.full_name, nip: u.nip || '' }));
-    const optionsHtml = '<option value="">— Pilih guru —</option>' +
-      guruListCache.map(u=>`<option value="${u.id}">${u.full_name}</option>`).join('');
-    TTD_SUFFIXES.forEach(suf=>{
-      TTD_PERAN.forEach(peran=>{
-        const sel = document.getElementById('ttd-'+peran+'-'+suf);
-        if(!sel) return;
-        const prevValue = sel.value;
-        sel.innerHTML = optionsHtml;
-        if(guruListCache.some(u=>u.id===prevValue)) sel.value = prevValue;
-        // pastikan tanda tangan yang ditampilkan tetap sinkron kalau data guru berubah (mis. NIP diedit)
-        const chosen = guruListCache.find(u=>u.id===sel.value);
-        const nameSpan = document.getElementById('sig-name-'+peran+'-'+suf);
-        const nipSpan = document.getElementById('sig-nip-'+peran+'-'+suf);
-        if(nameSpan) nameSpan.textContent = chosen ? chosen.full_name : NAMA_KOSONG;
-        if(nipSpan) nipSpan.textContent = formatNip(chosen ? chosen.nip : '');
-      });
+  // Perbarui nama & NIP guru pada blok tanda tangan sesuai wali kelas dari
+  // kelas yang sedang ditampilkan (dipanggil ulang tiap kali kelas berganti).
+  function updateSignatureForKelas(suffix, kelasNama){
+    const nameSpan = document.getElementById('sig-name-guru-'+suffix);
+    const nipSpan = document.getElementById('sig-nip-guru-'+suffix);
+    if(!nameSpan || !nipSpan) return;
+    const kelasObj = kelasNama ? kelasData.find(k=>k.nama === kelasNama) : null;
+    const wali = kelasObj ? kelasObj.wali : null;
+    nameSpan.textContent = wali?.full_name || NAMA_KOSONG;
+    nipSpan.textContent = formatNip(wali?.nip || '');
+  }
+
+  // Dipanggil ulang setelah data admin di-refresh (mis. NIP wali kelas
+  // diedit) supaya tanda tangan yang tersimpan di DOM tetap sinkron dengan
+  // kelas yang sedang aktif dipilih di tab Rekap Harian & Rekap Bulanan guru.
+  function refreshSignaturesForCurrentClasses(){
+    const harianSel = document.getElementById('guru-harian-class-tabs');
+    const bulananSel = document.getElementById('guru-bulanan-class-tabs');
+    updateSignatureForKelas('harian', harianSel ? harianSel.value : null);
+    updateSignatureForKelas('bulanan', bulananSel ? bulananSel.value : null);
+
+    // NIP Kepala Sekolah ikut disinkronkan di sini karena dipanggil ulang
+    // setiap kali profilesData selesai di-refresh (lihat pemanggil di bawah).
+    const nipKepsek = formatNip(cariNipKepsekDariGuru());
+    TTD_SUFFIXES.forEach(suffix=>{
+      const el = document.getElementById('sig-nip-kepsek-'+suffix);
+      if(el) el.textContent = nipKepsek;
     });
   }
-  TTD_SUFFIXES.forEach(suf=>{
-    TTD_PERAN.forEach(peran=>{
-      const sel = document.getElementById('ttd-'+peran+'-'+suf);
-      if(!sel) return;
-      sel.addEventListener('change', ()=>{
-        const chosen = guruListCache.find(u=>u.id===sel.value);
-        const nameSpan = document.getElementById('sig-name-'+peran+'-'+suf);
-        const nipSpan = document.getElementById('sig-nip-'+peran+'-'+suf);
-        if(nameSpan) nameSpan.textContent = chosen ? chosen.full_name : NAMA_KOSONG;
-        if(nipSpan) nipSpan.textContent = formatNip(chosen ? chosen.nip : '');
-      });
-    });
-  });
 
   // ------------------------------------------------------------------
   // Role tabs (dev-only fallback, biasanya disembunyikan oleh auth guard)
@@ -2833,7 +2828,7 @@
     refreshKelasUserSelect();
     renderKelasTable();
     renderKegiatanAdmin();
-    refreshTtdGuruSelects();
+    refreshSignaturesForCurrentClasses();
     if(currentUser?.role === 'admin'){
       updateAdminKegiatanDisplay();
       renderAdminRekapClassTabs();
@@ -3384,6 +3379,7 @@
   async function renderRecap(kelas){
     recapBody.innerHTML = "";
     updateGuruPetugasDisplay(kelas);
+    updateSignatureForKelas('harian', kelas);
     if(!kelas){
       recapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Pilih kelas untuk melihat ceklis.</td></tr>';
       updateGuruHarianStats(kelas, []);
@@ -3733,6 +3729,7 @@
 
   async function renderBulanan(kelas){
     bulananBody.innerHTML = "";
+    updateSignatureForKelas('bulanan', kelas);
     if(!kelas){
       bulananCaption.innerHTML = 'Anda belum menjadi wali kelas manapun, sehingga belum ada rekap yang bisa ditampilkan.';
       bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
@@ -4492,7 +4489,7 @@
 
     await Promise.all([loadProfiles(), loadKelas(), loadKegiatan()]);
 
-    refreshTtdGuruSelects();
+    refreshSignaturesForCurrentClasses();
 
     if(currentUser.role === 'admin'){
       refreshUserFilterKelasSelect();
