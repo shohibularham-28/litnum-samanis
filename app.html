@@ -3216,6 +3216,77 @@
     try{ localStorage.removeItem(key); }catch(e){}
   }
 
+  function rosterBadgeClass(status){
+    return ['sakit','ijin','alpha','dispen'].includes(status) ? 'izin' : status;
+  }
+
+  // ---- Mode terkunci: badge status + tombol ✏️ Edit per anak ----
+  // Dipakai begitu ceklis untuk tanggal ini sudah pernah disimpan sekali —
+  // supaya koreksi berikutnya tidak lagi lewat "Simpan Ceklis" massal
+  // (yang berisiko menimpa tanpa sadar), tapi lewat edit satu-satu per siswa.
+  function renderRosterRowView(row, s, i, status, bolehIsi){
+    row.dataset.currentStatus = status || "";
+    row.innerHTML = `
+      <span class="num">${i+1}</span>
+      <span class="name">${s.full_name}</span>
+      <span class="print-status">${labelMap[status] || '—'}</span>
+      <div class="status-group">
+        <span class="badge ${rosterBadgeClass(status) || ''}">${labelMap[status] || 'Belum ditandai'}</span>
+        ${bolehIsi ? '<button type="button" class="pill-btn edit-roster-btn">✏️ Edit</button>' : ''}
+      </div>`;
+    if(bolehIsi){
+      row.querySelector('.edit-roster-btn').addEventListener('click', ()=>{
+        renderRosterRowEdit(row, s, i, status, bolehIsi);
+      });
+    }
+  }
+
+  function renderRosterRowEdit(row, s, i, status, bolehIsi){
+    row.innerHTML = `
+      <span class="num">${i+1}</span>
+      <span class="name">${s.full_name}</span>
+      <span class="print-status"></span>
+      <div class="status-group">
+        <select class="status-select roster-edit-select">
+          <option value="hadir">Mengerjakan</option>
+          <option value="tidak">Tidak Mengerjakan</option>
+          <option value="sakit">Sakit</option>
+          <option value="ijin">Ijin</option>
+          <option value="alpha">Alpha</option>
+          <option value="dispen">Dispen</option>
+        </select>
+        <button type="button" class="pill-btn solid roster-save-btn">💾 Simpan</button>
+        <button type="button" class="pill-btn roster-cancel-btn">✕ Batal</button>
+      </div>`;
+    const sel = row.querySelector('.roster-edit-select');
+    if(status) sel.value = status;
+    row.querySelector('.roster-cancel-btn').addEventListener('click', ()=>{
+      renderRosterRowView(row, s, i, status, bolehIsi);
+    });
+    row.querySelector('.roster-save-btn').addEventListener('click', async ()=>{
+      const next = sel.value;
+      const saveBtn = row.querySelector('.roster-save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Menyimpan…';
+      const { error } = await supabase.from('ceklis').upsert({
+        kegiatan_id: siswaActiveKegiatan ? siswaActiveKegiatan.id : null,
+        kelas: currentUser.kelas,
+        siswa_id: s.id,
+        tanggal: siswaSelectedTanggal,
+        status: next,
+        dicatat_oleh: currentUser.id,
+      }, { onConflict: 'siswa_id,tanggal' });
+      if(error){
+        alert('Gagal menyimpan: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Simpan';
+        return;
+      }
+      renderRosterRowView(row, s, i, next, bolehIsi);
+      updateSaveBarInfo();
+    });
+  }
+
   async function renderRosterSiswa(){
     rosterEl.innerHTML = "";
     if(!currentUser.kelas){
@@ -3233,56 +3304,70 @@
     rows.filter(r=>r.tanggal === siswaSelectedTanggal).forEach(r=>{ statusBySiswa[r.siswa_id] = r.status; });
     const ceklisDraft = loadCeklisDraft();
     const bolehIsi = isPetugasCeklis();
+    // Terkunci begitu SUDAH ADA ceklis tersimpan untuk tanggal ini — dari
+    // titik itu, koreksi harus lewat Edit per anak, bukan isi massal lagi.
+    const sudahDisimpan = Object.keys(statusBySiswa).length > 0;
 
-    rosterKelasSiswa.forEach((s,i)=>{
-      const row = document.createElement('div');
-      row.className = 'roster-row';
-      row.dataset.siswaId = s.id;
-      row.innerHTML = `
-        <span class="num">${i+1}</span>
-        <span class="name">${s.full_name}</span>
-        <span class="print-status"></span>
-        <div class="status-group">
-          <button class="status-btn" data-status="hadir" ${bolehIsi?'':'disabled'}>Mengerjakan</button>
-          <button class="status-btn" data-status="tidak" ${bolehIsi?'':'disabled'}>Tidak Mengerjakan</button>
-          <select class="status-select" ${bolehIsi?'':'disabled'}>
-            <option value="">Izin lainnya…</option>
-            <option value="sakit">Sakit</option>
-            <option value="ijin">Ijin</option>
-            <option value="alpha">Alpha</option>
-            <option value="dispen">Dispen</option>
-          </select>
-        </div>`;
-      const hadirBtn = row.querySelector('[data-status="hadir"]');
-      const tidakBtn = row.querySelector('[data-status="tidak"]');
-      const sel = row.querySelector('select');
-      const printStatusEl = row.querySelector('.print-status');
-      function setState(state, selVal){
-        hadirBtn.classList.toggle('active', state==='hadir');
-        tidakBtn.classList.toggle('active', state==='tidak');
-        sel.className='status-select'+(selVal?(selVal==='alpha'?' clay':' amber'):'');
-        sel.value = selVal || "";
-        row.dataset.currentStatus = state || selVal || "";
-        printStatusEl.textContent = labelMap[state || selVal] || '—';
-        ceklisDraft[s.id] = row.dataset.currentStatus;
-        saveCeklisDraft(ceklisDraft);
-      }
-      // Draft lokal (belum tentu tersimpan) didahulukan dari data server,
-      // supaya tanda yang baru saja diklik petugas tetap terlihat setelah reload.
-      const st = Object.prototype.hasOwnProperty.call(ceklisDraft, s.id) ? ceklisDraft[s.id] : statusBySiswa[s.id];
-      if(['sakit','ijin','alpha','dispen'].includes(st)) setState(null, st);
-      else if(st) setState(st, null);
-      hadirBtn.addEventListener('click',()=>setState('hadir',null));
-      tidakBtn.addEventListener('click',()=>setState('tidak',null));
-      sel.addEventListener('change',()=>setState(null, sel.value || null));
-      rosterEl.appendChild(row);
-    });
-    // Tombol simpan/reset hanya untuk petugas ceklis — siswa biasa hanya
-    // melihat roster & status (read-only), sesuai batas yang sama dengan RLS.
+    if(sudahDisimpan){
+      rosterKelasSiswa.forEach((s,i)=>{
+        const row = document.createElement('div');
+        row.className = 'roster-row';
+        row.dataset.siswaId = s.id;
+        rosterEl.appendChild(row);
+        renderRosterRowView(row, s, i, statusBySiswa[s.id] || null, bolehIsi);
+      });
+    } else {
+      rosterKelasSiswa.forEach((s,i)=>{
+        const row = document.createElement('div');
+        row.className = 'roster-row';
+        row.dataset.siswaId = s.id;
+        row.innerHTML = `
+          <span class="num">${i+1}</span>
+          <span class="name">${s.full_name}</span>
+          <span class="print-status"></span>
+          <div class="status-group">
+            <button class="status-btn" data-status="hadir" ${bolehIsi?'':'disabled'}>Mengerjakan</button>
+            <button class="status-btn" data-status="tidak" ${bolehIsi?'':'disabled'}>Tidak Mengerjakan</button>
+            <select class="status-select" ${bolehIsi?'':'disabled'}>
+              <option value="">Izin lainnya…</option>
+              <option value="sakit">Sakit</option>
+              <option value="ijin">Ijin</option>
+              <option value="alpha">Alpha</option>
+              <option value="dispen">Dispen</option>
+            </select>
+          </div>`;
+        const hadirBtn = row.querySelector('[data-status="hadir"]');
+        const tidakBtn = row.querySelector('[data-status="tidak"]');
+        const sel = row.querySelector('select');
+        const printStatusEl = row.querySelector('.print-status');
+        function setState(state, selVal){
+          hadirBtn.classList.toggle('active', state==='hadir');
+          tidakBtn.classList.toggle('active', state==='tidak');
+          sel.className='status-select'+(selVal?(selVal==='alpha'?' clay':' amber'):'');
+          sel.value = selVal || "";
+          row.dataset.currentStatus = state || selVal || "";
+          printStatusEl.textContent = labelMap[state || selVal] || '—';
+          ceklisDraft[s.id] = row.dataset.currentStatus;
+          saveCeklisDraft(ceklisDraft);
+        }
+        // Draft lokal (belum tentu tersimpan) didahulukan dari data server,
+        // supaya tanda yang baru saja diklik petugas tetap terlihat setelah reload.
+        const st = Object.prototype.hasOwnProperty.call(ceklisDraft, s.id) ? ceklisDraft[s.id] : statusBySiswa[s.id];
+        if(['sakit','ijin','alpha','dispen'].includes(st)) setState(null, st);
+        else if(st) setState(st, null);
+        hadirBtn.addEventListener('click',()=>setState('hadir',null));
+        tidakBtn.addEventListener('click',()=>setState('tidak',null));
+        sel.addEventListener('change',()=>setState(null, sel.value || null));
+        rosterEl.appendChild(row);
+      });
+    }
+    // Tombol simpan/reset hanya untuk petugas ceklis, dan hanya selama ceklis
+    // hari ini BELUM pernah disimpan — setelah itu koreksi lewat Edit per anak.
     const simpanBtn = document.querySelector('#siswa-detail .save-bar-actions .pill-btn.solid');
     const resetBtn = document.getElementById('reset-siswa');
-    if(simpanBtn) simpanBtn.style.display = bolehIsi ? '' : 'none';
-    if(resetBtn) resetBtn.style.display = bolehIsi ? '' : 'none';
+    const tampilkanAksiMassal = bolehIsi && !sudahDisimpan;
+    if(simpanBtn) simpanBtn.style.display = tampilkanAksiMassal ? '' : 'none';
+    if(resetBtn) resetBtn.style.display = tampilkanAksiMassal ? '' : 'none';
     updateSaveBarInfo();
   }
 
@@ -3311,7 +3396,7 @@
         dicatat_oleh: currentUser.id,
       }));
     if(rows.length === 0){ alert('Belum ada status yang ditandai.'); return; }
-    const { error } = await supabase.from('ceklis').upsert(rows, { onConflict: 'kegiatan_id,siswa_id,tanggal' });
+    const { error } = await supabase.from('ceklis').upsert(rows, { onConflict: 'siswa_id,tanggal' });
     if(error){
       // Kode 23503 = foreign key violation. Ini terjadi kalau kegiatan yang
       // sedang dibuka ternyata sudah dihapus/diganti di server (data di
@@ -3332,6 +3417,7 @@
     }
     clearCeklisDraft();
     showThanksPopup(currentUser.full_name);
+    await renderRosterSiswa();
   });
 
   document.getElementById('reset-siswa').addEventListener('click', ()=>{
