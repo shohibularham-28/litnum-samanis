@@ -205,6 +205,14 @@
     align-items:center;
     gap:6px;
     transition:border-color .15s ease, color .15s ease;
+    /* Melayang mepet ke tepi kanan LAYAR (viewport), posisi vertikal (top)
+       diatur lewat JS supaya sejajar dengan baris menu tab yang sedang
+       tampil (lihat fungsi positionReloadBtn). */
+    position:fixed;
+    top:24px;
+    right:20px;
+    z-index:40;
+    box-shadow:0 2px 8px rgba(27,42,60,.08);
   }
   .reload-btn:hover{border-color:var(--cover); color:var(--cover);}
   .reload-btn:disabled{opacity:.55; cursor:default;}
@@ -1033,6 +1041,8 @@
     .masthead-right{width:100%; justify-content:space-between;}
     .user-meta{display:none;}
     .user-chip{padding:6px;}
+    .reload-btn{right:8px; padding:8px 10px;}
+    .reload-btn .reload-label{display:none;}
 
     .panel{padding:16px;}
     .panel-head{gap:10px;}
@@ -1099,10 +1109,6 @@
           <span class="user-role" id="user-role-label">—</span>
         </div>
       </div>
-      <button class="reload-btn" id="reload-btn" title="Muat ulang data">
-        <span class="reload-icon">🔄</span>
-        <span class="reload-label">Muat Ulang</span>
-      </button>
       <button class="logout-btn" id="logout-btn" title="Keluar">Keluar</button>
     </div>
   </div>
@@ -1113,6 +1119,17 @@
     <div class="role-tab" data-role="admin">Admin</div>
   </div>
   <div class="role-note" id="role-note">Tampilan mengikuti peran akun yang sedang masuk.</div>
+
+  <!-- Tombol Muat Ulang: posisinya "melayang" (position:fixed), sejajar
+       secara vertikal dengan baris menu tab (admin-main-tabs / guru-main-tabs),
+       tapi horizontalnya selalu mepet ke tepi kanan LAYAR (viewport), bukan
+       cuma tepi kanan konten yang lebar maksimalnya 1000px. Posisi vertikalnya
+       dihitung ulang lewat JS (lihat positionReloadBtn) supaya selalu sejajar
+       dengan tab yang sedang tampil sesuai role user. -->
+  <button class="reload-btn" id="reload-btn" title="Muat ulang data">
+    <span class="reload-icon">🔄</span>
+    <span class="reload-label">Muat Ulang</span>
+  </button>
 
   <!-- ============ SISWA PANEL ============ -->
   <div class="panel active" id="panel-siswa">
@@ -1186,7 +1203,7 @@
       </div>
     </div>
 
-    <div class="admin-tabs">
+    <div class="admin-tabs" id="guru-main-tabs">
       <div class="guru-subtab active" data-guruview="harian">Rekap Harian</div>
       <div class="guru-subtab" data-guruview="bulanan">Rekap Bulanan</div>
       <div class="guru-subtab" data-guruview="kegiatan">Kegiatan Literasi</div>
@@ -1376,7 +1393,7 @@
       </div>
     </div>
 
-    <div class="admin-tabs">
+    <div class="admin-tabs" id="admin-main-tabs">
       <div class="admin-tab active" data-admin="users">Pengguna</div>
       <div class="admin-tab" data-admin="kelas">Kelas</div>
       <div class="admin-tab" data-admin="kegiatan">Kegiatan</div>
@@ -3022,6 +3039,7 @@
       document.getElementById('admin-'+t.dataset.admin).classList.add('active');
       // Simpan tab yang aktif supaya tetap di tab yang sama walau halaman di-refresh.
       localStorage.setItem('activeAdminTab', t.dataset.admin);
+      if(typeof positionReloadBtn === 'function') setTimeout(positionReloadBtn, 0);
     });
   });
 
@@ -4545,6 +4563,7 @@
       t.classList.add('active');
       document.getElementById('guru-'+t.dataset.guruview).classList.add('active');
       localStorage.setItem('activeGuruSubtab', t.dataset.guruview);
+      if(typeof positionReloadBtn === 'function') setTimeout(positionReloadBtn, 0);
     });
   });
 
@@ -5047,6 +5066,40 @@
   }
 
   // ------------------------------------------------------------------
+  // Sejajarkan tombol "Muat Ulang" (yang posisinya fixed, mepet ke tepi
+  // kanan layar) secara vertikal dengan baris menu tab utama yang sedang
+  // tampil sesuai role: admin -> #admin-main-tabs, guru -> #guru-main-tabs.
+  // Kalau tidak ada baris menu tab (mis. siswa), jatuhkan ke posisi
+  // sejajar masthead sebagai fallback.
+  // ------------------------------------------------------------------
+  function positionReloadBtn(){
+    if(!reloadBtn) return;
+    let target = null;
+    if(currentUser?.role === 'admin'){
+      target = document.getElementById('admin-main-tabs');
+    } else if(currentUser?.role === 'guru'){
+      target = document.getElementById('guru-main-tabs');
+    }
+    if(!target || target.offsetParent === null){
+      target = document.querySelector('.masthead');
+    }
+    if(!target) return;
+    const rect = target.getBoundingClientRect();
+    const btnHeight = reloadBtn.offsetHeight || 36;
+    const top = rect.top + (rect.height / 2) - (btnHeight / 2);
+    reloadBtn.style.top = Math.max(12, Math.round(top)) + 'px';
+  }
+  window.addEventListener('resize', ()=> positionReloadBtn());
+  let reloadBtnScrollRaf = null;
+  window.addEventListener('scroll', ()=>{
+    if(reloadBtnScrollRaf) return;
+    reloadBtnScrollRaf = requestAnimationFrame(()=>{
+      positionReloadBtn();
+      reloadBtnScrollRaf = null;
+    });
+  }, { passive:true });
+
+  // ------------------------------------------------------------------
   // Boot
   // ------------------------------------------------------------------
   (async function boot(){
@@ -5067,6 +5120,14 @@
     // Pulihkan tab terakhir yang dibuka sebelum refresh (lihat definisi
     // restoreActiveTabs di atas).
     restoreActiveTabs();
+
+    // Sejajarkan tombol "Muat Ulang" dengan baris menu tab yang tampil.
+    // Dipanggil beberapa kali dengan jeda kecil karena tinggi konten di
+    // atasnya (mis. jumlah baris tab yang wrap) baru pasti setelah
+    // browser selesai reflow.
+    positionReloadBtn();
+    setTimeout(positionReloadBtn, 50);
+    setTimeout(positionReloadBtn, 300);
   })();
 </script>
 </body>
