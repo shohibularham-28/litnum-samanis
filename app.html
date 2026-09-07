@@ -744,6 +744,32 @@
   .recap-monthly td.count-tidak{color:var(--clay); font-weight:700;}
   .recap-monthly td.count-alpha{color:var(--clay); font-weight:700;}
 
+  .ijin-lainnya-toggle{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+    background:none;
+    border:none;
+    padding:2px 4px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+  .ijin-lainnya-toggle:hover{color:var(--cover-dark);}
+  .ijin-lainnya-toggle .caret{font-size:10px; color:var(--ink-faint); transition:transform .15s ease;}
+  .ijin-lainnya-toggle[aria-expanded="true"] .caret{transform:rotate(90deg);}
+  .ijin-lainnya-detail{
+    margin-top:4px;
+    font-size:11px;
+    font-weight:500;
+    color:var(--ink-soft);
+    text-align:left;
+    line-height:1.5;
+  }
+  .ijin-lainnya-detail b{color:var(--ink);}
+
   .stat-row{
     display:flex;
     gap:10px;
@@ -1223,12 +1249,12 @@
         <thead>
           <tr>
             <th>No</th><th>Nama Siswa</th>
-            <th>Mengerjakan</th><th>Tidak</th><th>Sakit</th><th>Ijin</th><th>Alpha</th><th>Dispen</th>
+            <th>Mengerjakan</th><th>Tidak</th><th>Ijin Lainnya</th>
           </tr>
         </thead>
         <tbody id="bulanan-body"></tbody>
       </table>
-      <div class="edit-hint">Angka menunjukkan jumlah kemunculan status tiap siswa selama bulan terpilih.</div>
+      <div class="edit-hint">Angka menunjukkan jumlah kemunculan status tiap siswa selama bulan terpilih. Klik angka pada kolom <strong>Ijin Lainnya</strong> untuk melihat rincian Sakit/Ijin/Alpha/Dispen.</div>
       <div class="signature-block" id="sig-bulanan"></div>
       <div class="print-row">
         <button class="pill-btn" id="print-bulanan">📄 Unduh PDF (A4)</button>
@@ -1582,12 +1608,12 @@
           <thead>
             <tr>
               <th>No</th><th>Kelas</th><th>Nama Siswa</th>
-              <th>Mengerjakan</th><th>Tidak</th><th>Sakit</th><th>Ijin</th><th>Alpha</th><th>Dispen</th>
+              <th>Mengerjakan</th><th>Tidak</th><th>Ijin Lainnya</th>
             </tr>
           </thead>
           <tbody id="admin-bulanan-body"></tbody>
         </table>
-        <div class="edit-hint">Angka menunjukkan jumlah kemunculan status tiap siswa selama bulan terpilih, digabung dari semua kelas kecuali difilter.</div>
+        <div class="edit-hint">Angka menunjukkan jumlah kemunculan status tiap siswa selama bulan terpilih, digabung dari semua kelas kecuali difilter. Klik angka pada kolom <strong>Ijin Lainnya</strong> untuk melihat rincian Sakit/Ijin/Alpha/Dispen.</div>
       </div>
     </div>
 
@@ -1659,6 +1685,29 @@
   const SUPABASE_URL = 'https://mzmbdqodoycauatcdgre.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_Q2mh3YnvsB2A9VlkhVcdkQ_0dYxGGND';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ------------------------------------------------------------------
+  // Supabase/PostgREST secara default hanya mengembalikan maksimal 1000
+  // baris per query. Helper ini mengambil SEMUA baris dengan cara
+  // membaca berulang memakai .range() sampai datanya habis, supaya data
+  // yang jumlahnya lebih dari 1000 tetap tampil semua.
+  //   buildQuery: fungsi TANPA argumen yang mengembalikan query builder
+  //               baru setiap kali dipanggil, misal:
+  //               () => supabase.from('ceklis').select('*').eq('kelas', kelas)
+  // ------------------------------------------------------------------
+  async function fetchAllRows(buildQuery, pageSize = 1000){
+    let allRows = [];
+    let from = 0;
+    while(true){
+      const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+      if(error) return { data: null, error };
+      const rows = data || [];
+      allRows = allRows.concat(rows);
+      if(rows.length < pageSize) break; // halaman terakhir sudah lebih pendek dari pageSize
+      from += pageSize;
+    }
+    return { data: allRows, error: null };
+  }
 
   // Bungkus semua tabel rekap dengan div yang bisa digeser (scroll) horizontal
   // supaya di layar ponsel yang sempit, tabel dengan banyak kolom tidak merusak
@@ -1771,26 +1820,34 @@
   let ceklisCache = {};    // key `${kegiatan_id}|${kelas}` -> rows
 
   async function loadProfiles(){
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: true });
+    const { data, error } = await fetchAllRows(() =>
+      supabase.from('profiles').select('*').order('created_at', { ascending: true })
+    );
     if(error){ console.error(error); profilesData = []; return; }
     profilesData = data || [];
   }
   async function loadKelas(){
-    const { data, error } = await supabase.from('kelas').select('*, wali:wali_guru_id(full_name, nip)').order('nama');
+    const { data, error } = await fetchAllRows(() =>
+      supabase.from('kelas').select('*, wali:wali_guru_id(full_name, nip)').order('nama')
+    );
     if(error){ console.error(error); kelasData = []; return; }
     kelasData = data || [];
   }
   async function loadKegiatan(){
-    const { data, error } = await supabase.from('kegiatan').select('*').order('created_at', { ascending: false });
+    const { data, error } = await fetchAllRows(() =>
+      supabase.from('kegiatan').select('*').order('created_at', { ascending: false })
+    );
     if(error){ console.error(error); kegiatanData = []; return; }
     kegiatanData = data || [];
   }
   async function loadCeklis(kegiatanId, kelas){
     if(!kegiatanId || !kelas) return [];
     const key = `${kegiatanId}|${kelas}`;
-    const { data, error } = await supabase.from('ceklis')
-      .select('*, siswa:siswa_id(full_name)')
-      .eq('kegiatan_id', kegiatanId).eq('kelas', kelas);
+    const { data, error } = await fetchAllRows(() =>
+      supabase.from('ceklis')
+        .select('*, siswa:siswa_id(full_name)')
+        .eq('kegiatan_id', kegiatanId).eq('kelas', kelas)
+    );
     if(error){ console.error(error); return []; }
     ceklisCache[key] = data || [];
     return ceklisCache[key];
@@ -1801,9 +1858,11 @@
   // terhapus (lihat schema.sql: ceklis.kegiatan_id ON DELETE SET NULL).
   async function loadCeklisByTanggal(kelas, tanggal){
     if(!kelas || !tanggal) return [];
-    const { data, error } = await supabase.from('ceklis')
-      .select('*, siswa:siswa_id(full_name)')
-      .eq('kelas', kelas).eq('tanggal', tanggal);
+    const { data, error } = await fetchAllRows(() =>
+      supabase.from('ceklis')
+        .select('*, siswa:siswa_id(full_name)')
+        .eq('kelas', kelas).eq('tanggal', tanggal)
+    );
     if(error){ console.error(error); return []; }
     return data || [];
   }
@@ -3954,19 +4013,54 @@
     btn.disabled = false; btn.textContent = 'Impor';
   });
 
+  // ------------------------------------------------------------------
+  // Rekap Bulanan: kolom "Ijin Lainnya" (gabungan Sakit/Ijin/Alpha/Dispen)
+  // yang bisa di-expand untuk melihat rinciannya.
+  // ------------------------------------------------------------------
+  function ijinLainnyaCellHtml(r){
+    const total = (r.sakit||0) + (r.ijin||0) + (r.alpha||0) + (r.dispen||0);
+    return `<td class="ijin-lainnya-cell">
+        <button type="button" class="ijin-lainnya-toggle" aria-expanded="false">
+          <span class="caret">▸</span>${total}
+        </button>
+        <div class="ijin-lainnya-detail" hidden>
+          Sakit <b>${r.sakit||0}</b> · Ijin <b>${r.ijin||0}</b> · Alpha <b>${r.alpha||0}</b> · Dispen <b>${r.dispen||0}</b>
+        </div>
+      </td>`;
+  }
+
+  // Delegasi klik di level tbody supaya tetap jalan walau baris di-render
+  // ulang (innerHTML diganti) setiap kali data dimuat.
+  function wireIjinLainnyaToggle(tbodyId){
+    const tbody = document.getElementById(tbodyId);
+    if(!tbody) return;
+    tbody.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.ijin-lainnya-toggle');
+      if(!btn) return;
+      const detail = btn.nextElementSibling;
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      if(detail) detail.hidden = expanded;
+    });
+  }
+  wireIjinLainnyaToggle('bulanan-body');
+  wireIjinLainnyaToggle('admin-bulanan-body');
+
   // ---- Guru: Rekap Bulanan (agregasi dari tabel ceklis) ----
   const bulananBody = document.getElementById('bulanan-body');
   const bulananCaption = document.getElementById('bulanan-caption');
   const bulanSelect = document.getElementById('bulan-select');
   const tahunSelect = document.getElementById('tahun-select');
   const bulanIndexByName = Object.fromEntries(bulanIndo.map((b,i)=>[b,i]));
+  let lastBulananRows = [];
 
   async function renderBulanan(kelas){
     bulananBody.innerHTML = "";
+    lastBulananRows = [];
     updateSignatureForKelas('bulanan', kelas);
     if(!kelas){
       bulananCaption.innerHTML = 'Anda belum menjadi wali kelas manapun, sehingga belum ada rekap yang bisa ditampilkan.';
-      bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
+      bulananBody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada data.</td></tr>';
       return;
     }
     const bulan = bulanSelect.value, tahun = parseInt(tahunSelect.value,10);
@@ -3975,10 +4069,12 @@
     const lastDay = new Date(tahun, bulanIdx+1, 0).getDate();
     const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
-    const { data, error } = await supabase.from('ceklis')
-      .select('siswa_id, status, tanggal, siswa:siswa_id(full_name)')
-      .eq('kelas', kelas).gte('tanggal', first).lte('tanggal', last);
-    if(error){ console.error(error); bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Gagal memuat data.</td></tr>'; return; }
+    const { data, error } = await fetchAllRows(() =>
+      supabase.from('ceklis')
+        .select('siswa_id, status, tanggal, siswa:siswa_id(full_name)')
+        .eq('kelas', kelas).gte('tanggal', first).lte('tanggal', last)
+    );
+    if(error){ console.error(error); bulananBody.innerHTML = '<tr><td colspan="5" class="empty-state">Gagal memuat data.</td></tr>'; return; }
 
     const perSiswa = {};
     (data || []).forEach(r=>{
@@ -3989,16 +4085,17 @@
 
     if(rows.length === 0){
       bulananCaption.innerHTML = `Belum ada data rekap untuk <strong>Kelas ${kelas}</strong>.`;
-      bulananBody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
+      bulananBody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada data.</td></tr>';
       return;
     }
     rows.forEach((r,i)=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${i+1}</td><td>${r.nama}</td>
         <td class="count-hadir">${r.hadir}</td><td class="count-tidak">${r.tidak}</td>
-        <td>${r.sakit}</td><td>${r.ijin}</td><td class="count-alpha">${r.alpha}</td><td>${r.dispen}</td>`;
+        ${ijinLainnyaCellHtml(r)}`;
       bulananBody.appendChild(tr);
     });
+    lastBulananRows = rows;
     bulananCaption.innerHTML = `Rekap <strong>Kelas ${kelas}</strong> — <strong>${bulan} ${tahun}</strong>`;
   }
 
@@ -4105,9 +4202,11 @@
     // Ambil langsung by tanggal (bukan lewat kegiatan_id) supaya rekap tetap
     // tampil walau kegiatan yang menaunginya sudah dihapus admin — data
     // ceklis sendiri tidak pernah ikut terhapus (lihat schema.sql).
-    let query = supabase.from('ceklis').select('*, siswa:siswa_id(full_name)').eq('tanggal', tanggal);
-    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
-    const { data, error } = await query;
+    const { data, error } = await fetchAllRows(() => {
+      let query = supabase.from('ceklis').select('*, siswa:siswa_id(full_name)').eq('tanggal', tanggal);
+      if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
+      return query;
+    });
     if(error){
       console.error(error);
       adminRecapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Gagal memuat data.</td></tr>';
@@ -4152,14 +4251,16 @@
     const last = `${tahun}-${String(bulanIdx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
     const kelasLabel = (!kelasFilter || kelasFilter === ADMIN_ALL_KELAS) ? 'Semua Kelas' : `Kelas ${kelasFilter}`;
 
-    let query = supabase.from('ceklis')
-      .select('siswa_id, kelas, status, tanggal, siswa:siswa_id(full_name)')
-      .gte('tanggal', first).lte('tanggal', last);
-    if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
-    const { data, error } = await query;
+    const { data, error } = await fetchAllRows(() => {
+      let query = supabase.from('ceklis')
+        .select('siswa_id, kelas, status, tanggal, siswa:siswa_id(full_name)')
+        .gte('tanggal', first).lte('tanggal', last);
+      if(kelasFilter && kelasFilter !== ADMIN_ALL_KELAS) query = query.eq('kelas', kelasFilter);
+      return query;
+    });
     if(error){
       console.error(error);
-      adminBulananBody.innerHTML = '<tr><td colspan="9" class="empty-state">Gagal memuat data.</td></tr>';
+      adminBulananBody.innerHTML = '<tr><td colspan="6" class="empty-state">Gagal memuat data.</td></tr>';
       return;
     }
 
@@ -4172,14 +4273,14 @@
 
     if(rows.length === 0){
       adminBulananCaption.innerHTML = `Belum ada data rekap untuk <strong>${kelasLabel}</strong>.`;
-      adminBulananBody.innerHTML = '<tr><td colspan="9" class="empty-state">Belum ada data.</td></tr>';
+      adminBulananBody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada data.</td></tr>';
       return;
     }
     rows.forEach((r,i)=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${i+1}</td><td>${r.kelas}</td><td>${r.nama}</td>
         <td class="count-hadir">${r.hadir}</td><td class="count-tidak">${r.tidak}</td>
-        <td>${r.sakit}</td><td>${r.ijin}</td><td class="count-alpha">${r.alpha}</td><td>${r.dispen}</td>`;
+        ${ijinLainnyaCellHtml(r)}`;
       adminBulananBody.appendChild(tr);
     });
     adminBulananCaption.innerHTML = `Rekap <strong>${kelasLabel}</strong> — <strong>${bulan} ${tahun}</strong>`;
@@ -4556,7 +4657,11 @@
     const kelasSel = document.getElementById('guru-bulanan-class-tabs');
     const kelas = kelasSel ? kelasSel.value : null;
     if(!kelas){ alert('Pilih kelas dulu.'); return; }
-    const rows = domRowsToArray(bulananBody);
+    if(lastBulananRows.length === 0){ alert('Belum ada data rekap untuk kelas & bulan ini.'); return; }
+    const rows = lastBulananRows.map((r,i)=>[
+      String(i+1), r.nama, String(r.hadir), String(r.tidak),
+      String(r.sakit), String(r.ijin), String(r.alpha), String(r.dispen),
+    ]);
     buildA4Pdf({
       suffix: 'bulanan',
       docTitle: 'Rekap Bulanan Literasi',
@@ -4604,11 +4709,13 @@
     if(mulai > akhir){ alert('Tanggal mulai tidak boleh setelah tanggal akhir.'); return; }
 
     rankingCaption.textContent = 'Memuat data…';
-    const { data, error } = await supabase.from('ceklis')
-      .select('siswa_id')
-      .eq('status', 'hadir')
-      .gte('tanggal', mulai)
-      .lte('tanggal', akhir);
+    const { data, error } = await fetchAllRows(() =>
+      supabase.from('ceklis')
+        .select('siswa_id')
+        .eq('status', 'hadir')
+        .gte('tanggal', mulai)
+        .lte('tanggal', akhir)
+    );
     if(error){
       console.error(error);
       rankingCaption.textContent = 'Gagal memuat data.';
