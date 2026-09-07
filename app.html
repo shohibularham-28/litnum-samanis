@@ -3801,12 +3801,17 @@
   function updateAdminPetugasDisplay(kelasFilter){
     if(!adminKegiatanPetugasEl) return;
     const semuaPetugas = profilesData.filter(p=>p.role==='siswa' && p.jabatan==='petugas');
-    let list;
     if(!kelasFilter || kelasFilter === ADMIN_ALL_KELAS){
-      list = semuaPetugas.map(p=>`${p.full_name} (${p.kelas || '—'})`);
-    } else {
-      list = semuaPetugas.filter(p=>p.kelas === kelasFilter).map(p=>p.full_name);
+      if(semuaPetugas.length){
+        adminKegiatanPetugasEl.innerHTML = `<strong>Jumlah petugas hari ini:</strong> ${semuaPetugas.length} orang (pilih satu kelas untuk melihat namanya)`;
+        adminKegiatanPetugasEl.style.display = '';
+      } else {
+        adminKegiatanPetugasEl.textContent = '';
+        adminKegiatanPetugasEl.style.display = 'none';
+      }
+      return;
     }
+    const list = semuaPetugas.filter(p=>p.kelas === kelasFilter).map(p=>p.full_name);
     if(list.length){
       adminKegiatanPetugasEl.innerHTML = `<strong>Petugas hari ini:</strong> ${list.map(esc).join(', ')}`;
       adminKegiatanPetugasEl.style.display = '';
