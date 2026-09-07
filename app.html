@@ -1157,11 +1157,11 @@
     </div>
     <table class="recap-table" id="recap-table">
       <thead>
-        <tr><th>No</th><th>Nama Siswa</th><th>Status</th></tr>
+        <tr><th>No</th><th>Nama Siswa</th><th>Status</th><th class="row-actions">Aksi</th></tr>
       </thead>
       <tbody id="recap-body"></tbody>
     </table>
-    <div class="edit-hint">Klik badge status untuk mengedit ceklis siswa.</div>
+    <div class="edit-hint">Klik tombol <strong>Edit</strong> pada baris siswa untuk mengubah status ceklis lewat dropdown.</div>
     <div class="signature-block" id="sig-harian"></div>
     <div class="print-row">
       <div class="ttd-picker">
@@ -3222,11 +3222,72 @@
     }
   }
 
+  // ---- Guru: baris ceklis dengan tombol Edit → dropdown status ----
+  // (menggantikan cara lama "tap badge untuk siklus status").
+  function recapBadgeClass(status){
+    return ['sakit','ijin','alpha','dispen'].includes(status) ? 'izin' : status;
+  }
+
+  function refreshGuruHarianStatsFromTable(){
+    const kelasSel = document.getElementById('guru-harian-class-tabs');
+    const kelas = kelasSel ? kelasSel.value : null;
+    const rowsStatus = [...recapBody.querySelectorAll('tr[data-status]')].map(tr=>({ status: tr.dataset.status }));
+    updateGuruHarianStats(kelas, rowsStatus);
+  }
+
+  function renderRecapRowView(tr, nomor, namaSiswa, status){
+    tr.dataset.status = status;
+    tr.innerHTML = `<td>${nomor}</td><td>${esc(namaSiswa)}</td>
+      <td><span class="badge ${recapBadgeClass(status)}">${labelMap[status] || '—'}</span></td>
+      <td class="row-actions no-export"><button type="button" class="pill-btn edit-ceklis-btn">✏️ Edit</button></td>`;
+    tr.querySelector('.edit-ceklis-btn').addEventListener('click', ()=>{
+      renderRecapRowEdit(tr, nomor, namaSiswa, status);
+    });
+  }
+
+  function renderRecapRowEdit(tr, nomor, namaSiswa, status){
+    tr.innerHTML = `<td>${nomor}</td><td>${esc(namaSiswa)}</td>
+      <td>
+        <select class="status-select recap-edit-select">
+          <option value="hadir">Mengerjakan</option>
+          <option value="tidak">Tidak Mengerjakan</option>
+          <option value="izin">Izin</option>
+          <option value="sakit">Sakit</option>
+          <option value="alpha">Alpha</option>
+          <option value="dispen">Dispen</option>
+        </select>
+      </td>
+      <td class="row-actions no-export" style="white-space:nowrap;">
+        <button type="button" class="pill-btn solid recap-save-btn">💾 Simpan</button>
+        <button type="button" class="pill-btn recap-cancel-btn">✕ Batal</button>
+      </td>`;
+    const sel = tr.querySelector('.recap-edit-select');
+    sel.value = status;
+    tr.querySelector('.recap-cancel-btn').addEventListener('click', ()=>{
+      renderRecapRowView(tr, nomor, namaSiswa, status);
+    });
+    tr.querySelector('.recap-save-btn').addEventListener('click', async ()=>{
+      const next = sel.value;
+      const saveBtn = tr.querySelector('.recap-save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Menyimpan…';
+      const { error } = await supabase.from('ceklis').update({ status: next }).eq('id', tr.dataset.id);
+      if(error){
+        alert('Gagal memperbarui: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Simpan';
+        return;
+      }
+      renderRecapRowView(tr, nomor, namaSiswa, next);
+      refreshGuruHarianStatsFromTable();
+    });
+  }
+
   async function renderRecap(kelas){
     recapBody.innerHTML = "";
     updateGuruPetugasDisplay(kelas);
     if(!kelas){
-      recapBody.innerHTML = '<tr><td colspan="3" class="empty-state">Pilih kelas untuk melihat ceklis.</td></tr>';
+      recapBody.innerHTML = '<tr><td colspan="4" class="empty-state">Pilih kelas untuk melihat ceklis.</td></tr>';
       updateGuruHarianStats(kelas, []);
       recapCaption.innerHTML = 'Anda belum menjadi wali kelas manapun, sehingga belum ada rekap yang bisa ditampilkan.';
       return;
@@ -3239,8 +3300,8 @@
     const kegiatanJudul = guruActiveKegiatan ? guruActiveKegiatan.judul : null;
     if(todays.length === 0){
       recapBody.innerHTML = kegiatanJudul
-        ? '<tr><td colspan="3" class="empty-state">Belum ada data ceklis untuk kelas &amp; tanggal ini.</td></tr>'
-        : '<tr><td colspan="3" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>';
+        ? '<tr><td colspan="4" class="empty-state">Belum ada data ceklis untuk kelas &amp; tanggal ini.</td></tr>'
+        : '<tr><td colspan="4" class="empty-state">Tidak ada kegiatan literasi pada tanggal ini.</td></tr>';
       recapCaption.innerHTML = kegiatanJudul
         ? `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`
         : `Tidak ada kegiatan literasi pada tanggal ini · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
@@ -3248,35 +3309,14 @@
     }
     todays.forEach((r,i)=>{
       const tr = document.createElement('tr');
-      const cycleClass = ['sakit','ijin','alpha','dispen'].includes(r.status) ? 'izin' : r.status;
-      tr.innerHTML = `<td>${i+1}</td><td>${r.siswa?.full_name || '—'}</td>
-        <td><span class="badge ${cycleClass}" data-id="${r.id}" data-status="${r.status}">${labelMap[r.status]}</span></td>`;
+      tr.dataset.id = r.id;
       recapBody.appendChild(tr);
+      renderRecapRowView(tr, i+1, r.siswa?.full_name || '—', r.status);
     });
     recapCaption.innerHTML = kegiatanJudul
       ? `<strong>${kegiatanJudul}</strong> · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`
       : `<strong>⚠️ Kegiatan sudah dihapus</strong> (data tetap tersimpan) · Menampilkan <strong>Kelas ${kelas}</strong> — <strong>${fmtTanggalIndo(tanggal)}</strong>`;
   }
-
-  const cycle = {hadir:"tidak", tidak:"izin", izin:"hadir", sakit:"hadir", alpha:"hadir", dispen:"hadir"};
-  recapBody.addEventListener('click', async (e)=>{
-    if(!e.target.classList.contains('badge')) return;
-    const id = e.target.dataset.id;
-    const cur = e.target.dataset.status;
-    const next = cycle[cur] || 'hadir';
-    const namaSiswa = e.target.closest('tr')?.children?.[1]?.textContent || 'siswa ini';
-    const konfirmasi = confirm(`Ubah status ${namaSiswa} dari "${labelMap[cur]}" menjadi "${labelMap[next]}"?`);
-    if(!konfirmasi) return;
-    const { error } = await supabase.from('ceklis').update({ status: next }).eq('id', id);
-    if(error){ alert('Gagal memperbarui: ' + error.message); return; }
-    e.target.dataset.status = next;
-    e.target.className = 'badge ' + (['sakit','ijin','alpha','dispen'].includes(next) ? 'izin' : next);
-    e.target.textContent = labelMap[next];
-    const kelasSel = document.getElementById('guru-harian-class-tabs');
-    const kelas = kelasSel ? kelasSel.value : null;
-    const badges = [...recapBody.querySelectorAll('.badge')];
-    updateGuruHarianStats(kelas, badges.map(b=>({ status: b.dataset.status })));
-  });
 
   function updateGuruHarianCaption(){
     // Fungsi lama — caption Rekap Harian sekarang di-set langsung di dalam
@@ -4108,7 +4148,7 @@
   function domRowsToArray(tbody){
     return [...tbody.querySelectorAll('tr')]
       .filter(tr=>!tr.querySelector('.empty-state'))
-      .map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent.trim()));
+      .map(tr=>[...tr.querySelectorAll('td:not(.no-export)')].map(td=>td.textContent.trim()));
   }
 
   const COLS_ROSTER = ['No', 'Nama Siswa', 'Status'];
@@ -4142,6 +4182,10 @@
     const kelasSel = document.getElementById('guru-harian-class-tabs');
     const kelas = kelasSel ? kelasSel.value : null;
     if(!kelas){ alert('Pilih kelas dulu.'); return; }
+    if(recapBody.querySelector('.recap-edit-select')){
+      alert('Masih ada baris yang sedang diedit. Simpan atau batalkan dulu sebelum mengunduh PDF.');
+      return;
+    }
     const rows = domRowsToArray(recapBody);
     if(rows.length === 0){
       alert(guruActiveKegiatan
