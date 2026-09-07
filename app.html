@@ -1375,9 +1375,13 @@
         </div>
         <div class="filter-block">
           <div class="filter-label">Kelas</div>
-          <select class="month-picker-select" id="user-filter-kelas">
-            <option value="">Semua Kelas</option>
-          </select>
+          <div class="kelas-picker">
+            <button type="button" class="kelas-picker-nav" id="user-filter-kelas-prev" aria-label="Kelas sebelumnya">‹</button>
+            <select class="month-picker-select" id="user-filter-kelas">
+              <option value="">Semua Kelas</option>
+            </select>
+            <button type="button" class="kelas-picker-nav" id="user-filter-kelas-next" aria-label="Kelas berikutnya">›</button>
+          </div>
         </div>
         <div class="filter-block">
           <div class="filter-label">Status</div>
@@ -4741,6 +4745,7 @@
   wireKelasPrevNext('guru-siswa-class-tabs', 'guru-siswa-class-prev', 'guru-siswa-class-next');
   wireKelasPrevNext('admin-rekap-harian-class-tabs', 'admin-rekap-harian-class-prev', 'admin-rekap-harian-class-next');
   wireKelasPrevNext('admin-rekap-bulanan-class-tabs', 'admin-rekap-bulanan-class-prev', 'admin-rekap-bulanan-class-next');
+  wireKelasPrevNext('user-filter-kelas', 'user-filter-kelas-prev', 'user-filter-kelas-next');
 
   // ------------------------------------------------------------------
   // Boot
