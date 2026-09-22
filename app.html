@@ -1625,7 +1625,7 @@
           </thead>
           <tbody id="admin-recap-body"></tbody>
         </table>
-        <div class="edit-hint">Rekap ini menampilkan semua kelas sekaligus secara default — pilih tab kelas di atas untuk melihat satu kelas saja. Untuk menghapus, pilih satu kelas (bukan "Semua Kelas") dan tanggal yang diinginkan, lalu klik "Hapus Rekap Tanggal Ini" — hanya data kelas &amp; tanggal tersebut yang terhapus, bukan seluruh rekap.</div>
+        <div class="edit-hint">Rekap ini menampilkan semua kelas sekaligus secara default — pilih tab kelas di atas untuk melihat satu kelas saja. Untuk menghapus, pilih satu kelas (bukan "Semua Kelas") dan tanggal yang diinginkan, lalu klik "Hapus Rekap Tanggal Ini" — hanya data kelas &amp; tanggal tersebut yang terhapus, bukan seluruh rekap. Ini juga berlaku untuk rekap dari kegiatan yang sudah dihapus (ditandai "⚠️ Kegiatan sudah dihapus" di atas).</div>
       </div>
 
       <!-- Rekap Bulanan (semua kelas) -->
@@ -4526,20 +4526,24 @@
   const hapusRekapTanggalBtn = document.getElementById('hapus-rekap-tanggal-btn');
   if(hapusRekapTanggalBtn){
     hapusRekapTanggalBtn.addEventListener('click', async ()=>{
-      const kegiatanId = adminActiveKegiatan ? adminActiveKegiatan.id : null;
-      const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : '';
+      // Sengaja TIDAK mensyaratkan kegiatan masih ada (adminActiveKegiatan
+      // bisa null kalau kegiatannya sudah dihapus) — rekap harian ditampilkan
+      // berdasarkan kelas+tanggal saja (lihat renderAdminRekapHarian di atas),
+      // jadi penghapusannya juga harus berdasarkan kelas+tanggal saja supaya
+      // rekap dari kegiatan yang sudah dihapus tetap bisa dihapus admin.
+      const kegiatanJudul = adminActiveKegiatan ? adminActiveKegiatan.judul : null;
       const harianSel = document.getElementById('admin-rekap-harian-class-tabs');
       const kelasFilter = harianSel ? harianSel.value : null;
       const tanggal = currentAdminHarianTanggal();
 
-      if(!kegiatanId){ alert('Tidak ada kegiatan literasi pada tanggal ini.'); return; }
       if(!kelasFilter || kelasFilter === ADMIN_ALL_KELAS){
         alert('Pilih satu kelas terlebih dahulu (bukan "Semua Kelas") sebelum menghapus rekap.');
         return;
       }
 
+      const labelKegiatan = kegiatanJudul ? `pada kegiatan "${kegiatanJudul}" ` : '(kegiatannya sudah dihapus) ';
       if(!confirm(
-        `Hapus data ceklis Kelas ${kelasFilter} pada kegiatan "${kegiatanJudul}" untuk tanggal ${fmtTanggalIndo(tanggal)}?\n\n` +
+        `Hapus data ceklis Kelas ${kelasFilter} ${labelKegiatan}untuk tanggal ${fmtTanggalIndo(tanggal)}?\n\n` +
         'Hanya data kelas & tanggal ini yang akan dihapus — rekap tanggal lain dan kelas lain tidak terpengaruh. Tindakan ini tidak bisa dibatalkan.'
       )) return;
 
@@ -4547,7 +4551,7 @@
       hapusRekapTanggalBtn.textContent = 'Menghapus…';
 
       const { error } = await supabase.from('ceklis').delete()
-        .eq('kegiatan_id', kegiatanId).eq('kelas', kelasFilter).eq('tanggal', tanggal);
+        .eq('kelas', kelasFilter).eq('tanggal', tanggal);
 
       hapusRekapTanggalBtn.disabled = false;
       hapusRekapTanggalBtn.textContent = '🗑️ Hapus Rekap Tanggal Ini';
@@ -4557,7 +4561,7 @@
         return;
       }
 
-      delete ceklisCache[`${kegiatanId}|${kelasFilter}`];
+      ceklisCache = {};
       alert(`Rekap Kelas ${kelasFilter} tanggal ${fmtTanggalIndo(tanggal)} berhasil dihapus.`);
       await renderAdminRekapHarian(kelasFilter);
     });
